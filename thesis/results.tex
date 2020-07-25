@@ -1,1 +1,32 @@
 \chapter{Results}
+
+Not really sure about the subsections here (I still don't understand the texture options).
+
+The idea that currently comes to mind: For each parameter setting, create a record containing the following: 
+
+- performance (time)
+
+- average accuracy (targetRGB-latticeRGB)
+
+- maxDifference (the important quantity)
+
+- maybe other stuff (e.g. number of optimizer rounds)
+
+Also mention that it is multi-threaded and performance is not really a priority - the cube has to be created only once and then can be reused as much as the artists need.
+
+Compare these records with regard to:
+
+\subsection{Choice ot threshold}
+
+E.g. which threshold is still good enough for the moment method, the performance etc.
+
+\subsection{Sigmoid vs Moment method}
+
+Compare these two approaches (the texture option which I'm not sure about), choose the same threshold for both of them, maybe do this for more thresholds?
+
+\subsection{Constrained input}
+
+Compare maybe the performance of different atlases, or maybe atlas vs. seeding from the middle?
+
+The Results chapter is just a sketch and it may be completely changed, depending on the results and which of them will be interesting.
+

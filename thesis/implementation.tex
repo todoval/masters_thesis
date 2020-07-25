@@ -1,0 +1,26 @@
+\chapter{Implementation}
+
+Mention that we use the trigonometric moment method to extend Borgtool, which is currently used for spectral uplifting. In addition to utilizing the moment method, we are also constraining the input - explain what the constraining means in two sentences.
+
+\section{Borgtool}
+
+Mention how it works, probably a few screenshots, mention the sigmoid method it was already using (reference the available methods subsection in Spectral uplifting). Mention that it was seeding the cube from the middle. Explain the cube "expansion" and that for all the other lattice points, a prior is used from their already fitted neighbor.
+
+Also explain the threshold value - it is really important to set it properly and that it affects performance.
+
+\subsection{Optimizer}
+Maybe this doesn't need to be a subsection? Mention how it works, link the ceres optimizer and explain that until now we were using it to fit 3 coefficients.
+
+\subsection{Choice of parameters}
+Explain that because of the optimizer, we are actually using 9 moments. Link this to the spectral uplifting section. Emphasize that using complex moments isn't realistic and we need mirroring. Also, the default threshold is 0.1, going below is quite unrealistic - possible but would take a lot of time.
+
+\section{Cube constraints}
+
+We added the option to constraint the input. Explain the color atlases that might be provided, how the cube is seeded with them.
+
+If not specified, the cube is seeded from the middle (use Munsell N5 that was pre-computed). Also explain the relationship of the size of the atlas with cube dimension.
+
+\section{Filling the cube}
+Just mention that we are basically doing what has already been done, however the cube is now growing in many directions (multi-threaded) and not only from the middle - would be nice to add progress images. Also, it might be nice to add progress images when seeding only from the middle.
+
+Also emphasize that the optimizer is currently not working ideally and that there are a few issues - probably encounters some unresolved division by zero? - therefore sometimes, there are unexplained gaps. Explain that we are solving this by trying out various different prior coefficients and that this is definitely an "ugly behavior".
