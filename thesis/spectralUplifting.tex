@@ -1,22 +1,34 @@
 \chapter{Spectral Uplifting}
 
+
+
+Maybe call the next section spectral sampling? 
+
+
 Spectrum to RGB conversion, mention the problems, inaccuracies - depending on the length of text, the intro to spectral uplifting (upsampling) can be regarded as a separate section
 
 Also, probably here is a good time to mention that we are focusing on the reflectance spectra, however we will also talk about emission spectra in this section solely for research purposes
 
-\section{Available methods}
+\section{Spectral color representation}
+
+
+\subsection{Available methods}
 
 Maybe separate them into subsections, or add a subsection for comparing the results
 
-\section{Trigonometric moment method}
+\subsection{Trigonometric moment method}
 
 A review of the moment method (basically just a review of the paper)
 
-\subsection{Evaluation of various parameters}
+\subsubsection{Evaluation of various parameters}
 
 Add the results from the tests I ran back in April - which combination of number of moments, Warp/NonWarp and Mirror/NonMirror techniques is the most optimal. Also mention that we do not want to use complex moments as it doubles the space needed which will be unusable for the optimizer in the Implementation section. 
 
-\subsection{Reconstruction results}
+\subsubsection{Reconstruction results}
 Try the reconstruction on various spectrum values, also add the respective RGB values.
 
 It might be nice to also add the ideal coefficients that we got from the borgtool by optimizing and comparing them to the coefficient that were originally computed (these are different mainly due to rounding errors during the algorithm). 
+
+\section{Uplifting Methods}
+
+alebo rozdelit a urobit chapter samostatny ze spectral uplifting a samostatny kde bude spectral color representation
