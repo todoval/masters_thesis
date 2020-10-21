@@ -1,5 +1,53 @@
 \chapter{Results}
 
+\section{Number of moments}
+
+\subsection{Evaluation of parameters}
+
+Add the results from the tests I ran back in April - which combination of number of moments, Warp/NonWarp and Mirror/NonMirror techniques is the most optimal. Also mention that we do not want to use complex moments as it doubles the space needed which will be unusable for the optimizer in the Implementation section. 
+
+\begin{table}[t]
+	\centering
+	\begin{tabular}{crrrrrrrr}
+		\toprule
+		\multirow{4}{*}{Moments} &
+		\multicolumn{8}{c}{Methods} \\
+		\cmidrule(lr){2-9}
+		&\multicolumn{2}{c}{M\&W} &
+		\multicolumn{2}{c}{M\&nonW} &
+		\multicolumn{2}{c}{nMW} &
+		\multicolumn{2}{c}{nMnW}\\
+		\cmidrule(lr){2-9}
+		& Avg & Max & Avg & Max & Avg & Max & Avg & Max \\
+		\cmidrule(lr){1-9}
+		1&35.87&114.04&36.2&113.86&35.92&113.97&36.2&113.86\\
+		2&21.3&91.19&26.4&99.44&6.54&42.93&13.24&60.23\\
+		3&1.65&15.09&15.43&68.06&2.13&17.51&3.7&17.5\\
+		4&0.86&5.6&9.93&55.67&1.13&6.87&0.95&5.3\\
+		5&0.54&2.98&4.19&23.53&0.97&4.35&0.48&1.96\\
+		6&0.34&2.22&1.19&5.68&0.75&3.37&0.31&0.97\\
+		7&0.29&2.17&0.77&2.38&0.55&2.46&0.22&0.99\\
+		8&0.28&2.03&0.77&1.86&0.51&1.83&0.22&1.0\\
+		9&0.26&1.95&0.62&1.43&0.47&1.67&0.21&1.05\\
+		10&0.24&1.81&0.4&1.28&0.43&1.68&0.22&1.04\\
+		11&0.24&1.75&0.24&0.96&0.42&1.69&0.22&1.02\\
+		12&0.23&1.7&0.22&1.11&0.42&1.69&0.21&1.03\\
+		13&0.22&1.64&0.24&1.05&0.4&1.53&0.21&1.05\\
+		14&0.22&1.6&0.24&1.0&0.38&1.4&0.22&1.04\\
+		15&0.22&1.54&0.22&0.99&0.38&1.37&0.22&1.05\\
+		16&0.22&1.46&0.21&1.04&0.34&2.4&0.22&1.05\\
+		\bottomrule
+	\end{tabular}
+\caption{this is 1976, not 2000 due to discontinuities when using gradients}
+\end{table}
+
+\subsection{Reconstruction results}
+Try the reconstruction on various spectrum values, also add the respective RGB values.
+
+It might be nice to also add the ideal coefficients that we got from the borgtool by optimizing and comparing them to the coefficient that were originally computed (these are different mainly due to rounding errors during the algorithm). 
+
+\section{Spectral uplifting}
+
 Not really sure about the subsections here (I still don't understand the texture options).
 
 The idea that currently comes to mind: For each parameter setting, create a record containing the following: 
@@ -16,7 +64,7 @@ Also mention that it is multi-threaded and performance is not really a priority 
 
 Compare these records with regard to:
 
-\subsection{Choice ot threshold}
+\subsection{Choice of threshold}
 
 E.g. which threshold is still good enough for the moment method, the performance etc.
 
