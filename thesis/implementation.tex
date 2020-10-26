@@ -2,6 +2,14 @@
 
 Mention that we use the trigonometric moment method to extend Borgtool, which is currently used for spectral uplifting. In addition to utilizing the moment method, we are also constraining the input - explain what the constraining means in two sentences.
 
+Following, we provide a brief overview of the algorithm:
+\begin{enumerate}[label=S.\arabic*]
+	\item \emph{RGB cube initialization} --- create an RGB cube structure. For every RGB triplet in the cube, initialize its respective spectrum to empty.
+	\item \emph{seeding the cube} --- store the input spectra at the lattice points with their respective RGB values.
+	\item \emph{sampling of the spectra} --- for each spectrum, sample it so it can be represented (and also reconstructed) with a small, constant number of parameters. Save the parameters instead of the spectrum.
+	\item \label{Step 4} \emph{spectra approximation at other lattice points} --- use the already existing parameters in the cube to reconstruct RGB values at lattice points that do not have a defined spectrum yet. For this purpose, an approximation algorithm must be used.
+\end{enumerate}
+
 \section{Borgtool}
 
 Mention how it works, probably a few screenshots, mention the sigmoid method it was already using (reference the available methods subsection in Spectral uplifting). Mention that it was seeding the cube from the middle. Explain the cube "expansion" and that for all the other lattice points, a prior is used from their already fitted neighbor.

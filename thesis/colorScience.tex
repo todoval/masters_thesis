@@ -204,15 +204,15 @@ Tristimulus renderers are usually based on the RGB color space, although they of
 
 However, light in real world does not travel as a tristimulus value, but rather as a distribution of wavelengths. As RGB renderers do not possess full-spectral information of materials and light in the scene, they cannot properly simulate the physical properties of the color during e.g. reflections or refractions when ray tracing.
 
-Spectral rendering, on the other hand, uses full-spectral information of all materials and light in the scene during the whole rendering process. Obviously, before visualization occurs, spectral information must be converted into tristimulus (usually RGB) values, but this does not pose a problem as, at the moment of conversion, all the physically-based simulations have already taken place. Therefore, the rendered scene appears more realistic. We demonstrate this difference in~\ref{fig:mitsubaRGBSpectralComparison}, on a scene already rendered by Mitsuba2~\cite{Mitsuba2}.
+Spectral rendering, on the other hand, uses full-spectral information of all materials and light in the scene during the whole rendering process. Obviously, before visualization occurs, spectral information must be converted into tristimulus (usually RGB) values, but this does not pose a problem as, at the moment of conversion, all the physically-based simulations have already taken place. Therefore, the rendered scene appears more realistic. We demonstrate this difference in~\cref{fig:mitsubaRGBSpectralComparison}, on a scene already rendered by Mitsuba2~\cite{Mitsuba2}.
 
 In addition to rendering reflections and refractions more convincingly, another reason for using spectral rendering is its capability of simulating physically based phenomena that arises due to the interaction of color with light. Following, we overview some of the most common ones:
 \begin{itemize}
-\item \emph{Metamerism}
+\item \emph{Metamerism} \label{item:metamerism}
 
 As already mentioned in~\cref{ssec:tristimulusRepres}, the human tristimulus perception has a significantly lower domain than the (practically infinite) spectral domain. Therefore, two different spectra can trigger the same cone response in the human eye and appear to have the same color (and, subsequently, to have the same RGB values), giving rise to a phenomenon called \emph{metamerism}. The two spectra evaluating to the same tristimulus values are called \emph{metamers}.
 
-In real world, metamerism is often perceived when the lighting conditions under which we observe metamers change. An example of this can be seen in~\ref{fig:metamerism}. Although we perceive the color of both objects to be the same under D65 illuminant (daylight), when illuminating the scene with x illuminant, the color changes.
+In real world, metamerism is often perceived when the lighting conditions under which we observe metamers change. An example of this can be seen in~\cref{fig:metamerism}. Although we perceive the color of both objects to be the same under D65 illuminant (daylight), when illuminating the scene with x illuminant, the color changes.
 
 Obviously, this behavior is irreproducible by an RGB renderer, as it cannot replicate the behavior of spectral reflectance under an illuminant.
 
