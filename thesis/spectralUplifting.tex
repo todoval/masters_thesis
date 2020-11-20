@@ -40,7 +40,7 @@ where $f(\lambda)$ is the resulting spectrum, $S$ is a simple sigmoid function a
 
 In addition to energy conservation, the resulting spectra do not violate the (0,1) range constraint. They are extremely smooth and simple, which corresponds to many spectra typically found in nature. Another great advantage is memory efficiency, as storing one spectrum requires only three values. However, representing spectra as such also has its drawbacks. For example, there is currently no straightforward, well-defined computation of the RGB $\to$ spectrum conversion in such a domain. To uplift an RGB value, one must keep ``guessing'' the coefficients until the spectrum evaluates to the desired RGB.
 
-In this specific implementation, the ``guessing'' process is performed mostly by the CERES solver~\cite{ceresSolver} (note:should I find out how this works?). It requires only an initial guess and a metric according to which it improves the guess (i.e. the DeltaE error originating from round-trips) and requires only a few iterations to converge to 0.
+In this specific implementation, the ``guessing'' process is performed mostly by the CERES solver~\cite{ceres-solver} (note:should I find out how this works?). It requires only an initial guess and a metric according to which it improves the guess (i.e. the DeltaE error originating from round-trips) and requires only a few iterations to converge to 0.
 
 The uplifting process itself works by pre-computing RGB:spectra mappings and storing them in a texture. During rendering, only the required spectra are looked up in the texture.
 
@@ -130,7 +130,7 @@ As seen in~\cref{fig:sigDiffSpectraCoeffs}, the approaches of interpolating spec
 		\label{fig:sigDiffSpectraNeighbor}
 	\end{subfigure}
 	\caption{Comparison of techniques for obtaining spectra for arbitrary colors in the RGB cube. a) shows the original texture (converted from .exr), while b), c) and d) are rendered with ART by uplifting the texture to its spectral version. All the other figures show differences between some of the pairs. The exposure of the e), f) and h) difference images is increased to 3 for the errors to be visible, and the exposure of the g) image is increased to almost 7.}
-	\label{sigmoidTexture}
+	\label{fig:sigmoidTexture}
 \end{figure}
 
 An obvious case in which it is possible to avoid any kind of interpolation or approximation is when the RGB values that will be required during the uplift are known beforehand. They can then be added as lattice points to the RGB cube. This is especially useful when attempting to uplift specific textures or materials, which is, in fact, what this method was originally intended for.
@@ -202,7 +202,7 @@ Therefore, a novel approach has been proposed by~\citet{trigonometricMomentsPape
 
 Following, we provide a brief overview of both the algorithm for obtaining coefficients and the reconstruction process. For more details, we refer the interested reader to the original article~\cite{trigonometricMomentsPaper}.
 
-\paragraph{Obtaining coefficients} 
+\paragraph{Obtaining coefficients} \label{par:spectrumToCoefficientConversion}
 
 The first problem with obtaining the coefficients is caused by the shape of the spectra. In contrast to the Fourier basis, they are aperiodic. Their storage with Fourier coefficients therefore requires their conversion to a periodic signal.
 

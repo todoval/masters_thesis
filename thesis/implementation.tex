@@ -1,34 +1,238 @@
 \chapter{Implementation}
 
-Mention that we use the trigonometric moment method to extend Borgtool, which is currently used for spectral uplifting. In addition to utilizing the moment method, we are also constraining the input - explain what the constraining means in two sentences.
+We approach the problem of spectral uplifting similarly to~\citet{upsamplingJakobHanika}, where an uplifting model is created prior to rendering. Our implementation therefore consists of two parts --- \emph{model creation} and its subsequent \emph{utilization} in a rendering software. 
 
-Following, we provide a brief overview of the algorithm:
-\begin{enumerate}[label=S.\arabic*]
-	\item \emph{RGB cube initialization} --- create an RGB cube structure. For every RGB triplet in the cube, initialize its respective spectrum to empty.
-	\item \emph{seeding the cube} --- store the input spectra at the lattice points with their respective RGB values.
-	\item \emph{sampling of the spectra} --- for each spectrum, sample it so it can be represented (and also reconstructed) with a small, constant number of parameters. Save the parameters instead of the spectrum.
-	\item \label{Step 4} \emph{spectra approximation at other lattice points} --- use the already existing parameters in the cube to reconstruct RGB values at lattice points that do not have a defined spectrum yet. For this purpose, an approximation algorithm must be used.
+For the first part, we extend an already existing uplifting tool, the \emph{Borgtool}, which is currently used for creating sigmoid-based RGB cubes as in~\cref{alg:upliftingAlgSigmoid}. We add the possibility for creating trigonometric moment-based cubes, i.e. for the spectra to be stored with trigonometric moments rather than sigmoid coefficients. We also add an option for constraining such a cube with a user-specified atlas.
+
+We then show the performance of such a model by integrating it in ART, which, up until now, used only one built-in sigmoid-based cube for all its uplifting processes.
+
+\section{Uplifting model}
+
+The core of this section is the already mentioned Borgtool. It is a stand-alone, non-open source thing that was created by Weta and is blabla. (spytat sa?)
+
+Currently, the output of the Borgtool is an RGB cube structure which contains multiple entries in form of lattice points. Following, we name the main parameters of a single cube entry:
+\begin{itemize}
+	\item \emph{target RGB} --- the actual RGB that the point has in the cube.
+	\item \emph{coefficients} -- -the sigmoid coefficients used to reconstruct a spectrum so it matches the target RGB.
+	\item \emph{lattice RGB} --- the actual RGB that the reconstructed spectrum evaluates to. Ideally, this should match the target RGB.
+\end{itemize}
+Along with its entries, the resulting cube structure also stores a few other properties, both \emph{static}, such as the illuminant according to which the RGB cube is uplifted, and \emph{user-adjustable}, such as the cube dimension or the fitting threshold (i.e. the maximum allowed difference between the target and the lattice RGB).
+
+Our trigonometric moment-based cube can be viewed as an extension of the sigmoid cube --- in addition to the already existing parameters, we add a user-adjustable \texttt{coefficientCount} variable which specifies the number of coefficients that are to be used for most of the entries, which subsequently requires us to alter the cube entry structure. Furthermore, for the purposes of atlas constraining, we extend the cube entry with an optional pointer to an atlas entry. This is where the main difference between our and the sigmoid cube lies --- while the sigmoid cube regards all of its points as equal, we distinguish between \emph{atlas lattice points}, i.e. the lattice points that correspond to specific atlas entries; and \emph{regular points}, which do not. We place special emphasis on the atlas lattice points, as we require their spectra to be as precise and close to the original spectra as possible. As a result, we choose to always store such spectra with the maximum available coefficients (currently, $9$). Therefore, the \texttt{coefficientCount} variable applies to the regular points only. We explain the reasoning behind this decision and its impact on rendering and overall performance more thoroughly as we continue with this section.
+
+Our uplifting process is also similar to the one already implemented in the Borgtool, which closely follows~\cref{alg:upliftingAlgSigmoid}. Following are the individual steps of the process:
+\begin{enumerate}
+	\item \emph{Initialization}
+	\item \emph{Fitting of starting points}
+	\item \emph{Cube fitting}
+	\item \emph{Cube improvement}
+	\item \emph{Cube storage}
 \end{enumerate}
 
-\section{Borgtool}
+\subsection{Initialization}
 
-Mention how it works, probably a few screenshots, mention the sigmoid method it was already using (reference the available methods subsection in Spectral uplifting). Mention that it was seeding the cube from the middle. Explain the cube "expansion" and that for all the other lattice points, a prior is used from their already fitted neighbor.
+This part of the run is responsible for three things:
+\begin{itemize}
+	\item parsing of the parameters
+	\item initialization of the cube and its entries with default values
+	\item loading of the required color atlases
+\end{itemize}
+
+The initialization of the cube is pretty straightforward, as all of its properties are either user-defined or set to default (note: the default illuminant is always D65). The number of cube entries is directly proportional to the cube's \texttt{dimension} parameter, which specifies the number of entries per one axis. This renders the total number of entries to $dimension^3$. As the lattice points are positioned evenly, their target RGB values are then equivalent to their coordinates in the RGB cube.
+
+The loading of the atlases is a bit more complicated. Firstly, a single color atlas is inputted in a form of a simple .txt file, which contains merely a list of entries in a textual form as shown in~\cref{fig:macbethSampleText}. Therefore, it requires parsing.
+
+\begin{figure}[t]
+	\lstset{
+		string=[s]{"}{"},
+		comment=[l]{:},
+		commentstyle=\color{black},
+		basicstyle=\scriptsize
+	}
+	\begin{lstlisting}
+Entry ID:   orange
+---------------------------------------------------------------------------
+Description           :  "orange" patch of the Macbeth colour checker
+Type                  :  reflectance spectrum
+Fluorescence data     :  no
+Measurement device    :  
+Measured by           :  
+Measurement date      :  
+
+Sampling information
+--------------------
+Type	    	      :  regular
+Start                 :  380.0 nm
+Increment             :  5.0 nm
+Maximum sample value  :  100.0
+
+ASCII sample data
+-----------------
+{6.143748,  5.192119,  4.867970,  5.092529,  4.717562,  4.663087,  4.455331,  4.562958,  4.517197,  4.536289,  4.454180,  4.543101,  4.491708, ... }
+
+	\end{lstlisting}
+	\caption{A sample entry from the Macbeth Color Checker atlas.}
+	\label{fig:macbethSampleText}
+\end{figure}
+
+Moreover, the spectral data obtained from the atlases cannot be stored in the Borgtool directly, so as to avoid extreme memory requirements arising with large atlases. To solve this problem, we take advantage of the trigonometric moments.
+
+We store the spectral curves of the individual atlas entries by using the Fourier coefficients as described in~\cref{par:spectrumToCoefficientConversion}. We use the maximum number of available moments (currently 9, see explanation in~\cref{ssec:ceresSolver}), and we both mirror and warp the signal prior to coefficient computation. We explain the reasoning behind this in~\cref{sec:storingMoments}, where we run experiments to decide on the most efficient and precise method.
+
+\subsection{Fitting of starting points}
+
+In order to uplift the whole cube as described in~\cref{alg:upliftingAlgSigmoid}, we must first fit one or more \emph{starting points} whose coefficients can then be used as prior for the fitting of other lattice points.
+
+For these purposes, we utilize the user-specified color atlas. Ideally, every entry of the color atlas should correspond to one lattice point. We try to achieve this by iterating over the atlas entries, finding the cube voxel in which the current entry should reside in terms of RGB and then choosing the closest lattice point from all 8 corners of the voxel. We classify this lattice point as an \emph{atlas lattice point} and we assign it the coefficients saved for the current atlas entry. We call this process the \emph{seeding} of the cube.
+
+Obviously, achieving a complete injection between atlas entries and their respective lattice points is not always possible. In some cases, we might find that the closest lattice point to an atlas entry we are about to map has already been seeded. This might be due to the following reasons:
+\begin{itemize}
+	\item the number of atlas entries is higher than the size of the cube
+	\item the atlas entries are concentrated around specific colors (e.g. we seed a very small cube with only the Page 14 from the Munsell Book of Colors as in ukazka)
+\end{itemize}
+In both cases, we issue a warning and recommend the user to use a higher dimensional cube.
+
+By seeding the cube, we have appointed coefficients to some of the lattice points. These coefficients reconstruct a spectrum that evaluates to an RGB value which we denote as the \emph{lattice RGB}. The difference between the lattice and the target RGB is therefore equal to the distance between the lattice point and its assigned atlas entry. It is apparent that the distance may be higher than the defined fitting threshold. In such cases, we must ``improve'' upon the coefficients so that the resulting color difference is as low as possible.
+
+Our problem of improving the coefficients satisfies the definition of the \emph{Non-linear Least Squares} problem~\cite{nonLinearLeastSquares}. Non-linear Least Squares is an unconstrained minimization problem in the following form:
+\begin{equation} \label{eq:nonLinearLeastSquares}
+	 \underset{x}{\text{minimize}} \hspace{0.5em} f(x) = \sum_{i} f_{i}(x)^{2},
+\end{equation}
+where $x= \{x_{0}, x_{1}, x_{2}, ... \}$ is a parameter block that we are trying to improve (i.e. our coefficients) and $f_{i}$ are so-called \emph{cost functions}. The definition of cost functions is dependant solely on the current problem. In our case, we primarily require to minimize the difference between the lattice and the target RGB. Our secondary requirement is the shape similarity of the original atlas entry curve and the resulting curve of the atlas lattice point. This gives rise to multiple choices for cost functions, such as using the difference between curves along with the Delta E error, using one or multiple cost functions for the RGB error etc\ldots After implementing some of them and testing their performance, the results of which we provide in ref, we decide on neglecting the shape similarity requirement and using three cost functions, each specifying the absolute difference in one of the three axes of the cube.
+
+To solve an optimization problem defined in such a way, we use the CERES solver.
+
+\subsubsection{CERES solver} \label{ssec:ceresSolver}
+
+As already mentioned in~\cref{sec:upliftingMethods}, the CERES solver is an open-source library for solving large optimization problems such as our Non-linear Least Squares problem. It consists of two parts --- a \emph{modeling API} which provides tools for the construction of optimization problems, allowing us to set parameters such as maximum number of iterations of the optimizer and maximum number of consecutive nonmononotic steps; and a \emph{solver API} that controls the minimization algorithm.
+
+To solve a Non-linear Least Squares problem, the solver requires us to specify only a so-called \emph{residual block}, which is a structure defined by the prior coefficients and the cost functions. During the execution, the solver tries to minimize the values of the cost functions (or \emph{residuals}) in the residual block. The execution is aborted and the current best parameter block returned when the solver achieves either the specified number of iterations or nonmonotonic steps. For more information on the specifics of the CERES solver, we refer the interested reader to its documentation by~\citet{ceresNonLinearLeastSquares}.
+
+There are two main downsides to using the CERES solver. Firstly, the maximum allowed size for a parameter block when using a numeric cost function is 9. This means that we are not able to use more than 9 coefficients for storing a spectrum. This issue could be resolved by adding more residual blocks and combining their results. However, as the runtime of both fitting and rendering with 9 coefficients is already substantially high, we decide not to add such an option as it would most likely be unused.
+
+Another, greater issue is the possibility of CERES getting stuck in local minima and therefore produce unsatisfactory results. This may happen due to the following reasons:
+\begin{itemize} \label{ceresDeficiency}
+	\item the dimension of the cube is too low, i.e. the prior coefficients are extremely distinct from the ideal coefficients, or
+	\item the number of coefficients is too high, i.e. the optimizer fails in improving all of them due to the 
+\end{itemize}
+In such cases, the optimizer is not capable of leaving the local minima on its own. We therefore apply a simple heuristics, which consists of only slightly altering the first coefficient (or the first and the second) and running the optimizer again. We chose to alter the first coefficients because they influence the shape of the curve the most.
+
+The need for a heuristic also suggests considerable difference between the prior and the resulting coefficients, which implies distinct spectral curves. Such a behavior is undesired, as it may result in strong metameric artifacts.
+
+Fortunately, the heuristic is rarely triggered. We examine this in ref, where we analyze the success rate of the fitting and also demonstrate the curve differences by showing both the spectral curves of the atlas entries and of the fitted lattice points.
+
+The sigmoid-based method approaches the problem with starting points by selecting the point in the middle of the cube and initializing its coefficients to zero. As these values are extremely close to the real values of coefficients, the optimizer does not have a problem fitting it.
+
+As we do not require the user to always specify a color atlas, we provide an option for starting in the middle as well. This requires us to specify a set of prior coefficients for the middle point. We have determined it by iterating over multiple existing color atlases and searching for spectral curves that roughly evaluate to an RGB of (0.5, 0.5, 0.5). By obtaining the coefficients of such curves, we have eventually established the prior coefficients to be $\{0.5, 0, 0, 0, ... \}$, i.e. an array of zeroes except for the first coefficient. We use these prior coefficients for all available moments and cube dimensions.
+
+\subsection{Cube fitting}
+Once the starting points are successfully fitted, we can use their coefficients as prior for other lattice points. We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where the lattice points are fitted in multiple \emph{fitting rounds} with each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle our fitting algorithm on in~\cref{alg:upliftingAlgMoments}.
+
+\begin{algorithm}[t!]
+	\caption{Fitting of the cube from starting points}
+	\label{alg:upliftingAlgMoments}
+	\begin{algorithmic}[1]
+		\State $fittingRound \gets$ $0$
+		\State $unfittedPoints \gets$ a list of all points in $RGBCube \setminus startingPoints$
+		\ForAll{$point \in unfittedPoints$}
+		\State $point.fittingDistance = MAX\_DOUBLE$
+		\EndFor
+		\While {$unfittedPoints$ is not empty}
+		\State{$currRoundPts \gets$ points from $unfittedPoints$ that have at least one fitted neighbor}
+		\ForAll{$point \in currRoundPts$}
+		\ForAll{$fittedNeigbor \in point.neighbors$}
+		\State $point.coefs \gets fittedNeighbor.coefs$
+		\State $currDistance \gets $ CERES.Solve($point.coefs$, $costFunctions$)
+		\If{$currDistance \leq point.fittingDistance$} \label{algStep:improvementStart}
+		\State $point.fittingDistance \gets currDistance$
+		\State $point.coefs \gets $ coefficients from solver
+		\EndIf
+		\If{$currDistance \leq fittingThreshold$}
+		\State break
+		\EndIf \label{algStep:improvementEnd}
+		\EndFor
+		\While{$point.fittingDistance > fittingThreshold$} \label{algStep:heuristicsStart}
+		\State use heuristics to improve upon the current coefficients
+		\State run the solver again
+		\State repeat steps \ref{algStep:improvementStart} $-$ \ref{algStep:improvementEnd}
+		\If{too many iterations of the while cycle have been performed}
+		\State break \label{algStep:heuristicsEnd}
+		\EndIf
+		\EndWhile
+		\If{$point.fittingDistance > fittingThreshold$}
+		\State remove $point$ from $unfittedPoints$
+		\EndIf
+		\If{$point$ has tried the coefficients of all of its neighbors}
+		\State remove $point$ from $unfittedPoints$
+		\EndIf
+		\EndFor	
+		\State $fittingRound \gets fittingRound+1$
+		\EndWhile
+	\end{algorithmic}
+\end{algorithm}
+
+The core part of the algorithm is extremely similar to the algorithm used for fitting with sigmoids. However, we also add a heuristic-based improvement of the coefficients, implemented in steps~\ref{algStep:heuristicsStart} through~\ref{algStep:heuristicsEnd}. This part aims to minimize the shortcomings of the optimizer mentioned in~\cref{ceresDeficiency}.
+
+We implement the heuristics by changing up the first coefficient a pre-defined amount of times. In constrast to the heuristics applied when fitting atlas entries, we ommit the changing of the second coefficient completely and we also use significantly less iterations when changing the first coefficient. This is because we do not necessarily require the points to be fitted in the given round. Even if the fitting fails, it may still be successful in the following rounds, where the coefficients of newly fitted neighbors might be used as prior. Additionaly, after the cube fitting is done, we still run an ``improvement'' step for the unsuccessful points. We discuss the specifics of this step in more detail in~\cref{ssec:cubeImprovement}.
+
+The reason behind using improvement heuristics both during and after fitting is both for improved time performance and a more desirable resulting shape of the spectral curves. Cube improvement after fitting is extremely time-consuming in contrast to a simple change in coefficients. Moreover, due to reasons explained in~\cref{ssec:cubeImprovement}, the resulting curve could take a shape dramatically distinct from the shape of its neighbors, which is an undesirable behavior. On the other hand, trying to improve all coefficients during the cube fitting would require a complicated heuristic including a lot of optimizer runs, which might eventually lead to a lowered time performance. We show all of these effects in ref.
+
+The number of the fitting rounds depends both on the cube dimension and on the kind of atlas that has been used. If we choose not to input an atlas, the fitted cube ``grows'' from the middle, while seeding with an atlas makes the cube ``grow'' from many places, requiring a lot less round. We show the differences in , where we present the 
+
+Obviously, neither option is better in terms of performance, as the number of fitted points must still be the same. 
+
+\subsection{Cube improvement} \label{ssec:cubeImprovement}
+
+In extreme cases, such as when using too many coefficients to store entries of a cube with either a low dimension or a low fitting threshold, fitting some of the points may be unsuccessful even after applying heuristic improvements. We attempt to solve this by simply iterating over all the already fitted points and using their coefficients as prior for our point. We even apply heuristics similar to the ones used during the fitting of atlas entries. This shows to be useful especially if we have an extremely limited number of sets of prior coefficients, which happens usually if the overall size of the cube is small.
+
+We call this process \emph{cube improvement}. Although the heuristic may seem simple and illogical at first, we must once again zvyraznit that it is aimed solely at the most extreme cases. As a matter of fact, it usually does not even get triggered and, if it does, it is only for a highly problematic point of two. We present the exact statistics in ref.
+
+Obviosuly, improving the points as such has its drawbacks. We do not focus on the time performance, as we mainly want this part to be successful rather than fast. Moreover, as this step runs for a small set of numbers only, the execution time is negligible in comparison to other steps.
+
+The more important issue is the shape of the resulting curve. Using seemingly ``random'' coefficients as prior suggests the resulting curve's shape to be unlike those of its neighbors, which may result in metameric artifacts.
+
+
+multithreaded 
+
+We support from 2-8 moments then, however, we will talk about the number of coefficients (although user inserts moments). From now on we talk about coefficients. We do not support 1 or 2 coefs as they only create rovne ciary which does not reconstruct the color we want.
+
+\subsection{Cube storage}
+	
+Once the cube is completely fitted, its contents are written to a binary file. As we want the resulting file to be as small as possible, we save only the information crucial for rendering purposes. Following, we provide a list of contents of a cube file:
+\begin{itemize}
+	\item \emph{version}
+	\item \emph{features}
+	\item \emph{dimension}
+	\item \emph{coefficient count}, i.e. how many coefficients are used to reconstruct spectral information for every lattice point
+	\item \emph{illuminant} under which the cube has been fitted
+	\item \emph{fitting threshold}
+	\item for every point, we store:
+	\begin{itemize}
+		\item \emph{coefficients}
+		\item \emph{lattice RGB}
+		\item \emph{target RGB}
+		\item \emph{fitting distance}, i.e. the distance between lattice and target RGB, should be below fitting threshold
+		\item \emph{treated variable}, i.e. in which round was the point fitted. If the variable is equal to $-1$, it means the fitting has failed for this point.
+	\end{itemize}
+\end{itemize}
+
+We therefore ommit parameters that serve for 
+
+We do not, however, save all the cube's available information, but rather 
+
+ Their structure is different than those of the sigmoid cube as, obviously, they have different number of coefficients and we must also store the number of coefficients in the cube structure, which is not required in sigmoid.
+
+
+
+
+
+\section{ART integration}
+
+The user can choose the size of the cube etc. Borgtool has the following options, and we implement all of them for our method (except for something)
+The borgtool already has the sigmoid method implemented as in algorithm daco
+Uses three coefficients, fits from middle, and therefore results are metameric (show picture)
+We implement the trigonometric moment method by changing up the code provided by peters
+We aim for allowing the user to add a color atlas, however we also provide an option when the user fits from the middle
+When fitted from middle, the optimizer works very similarly to the sigmoid method (show pictures)
 
 Also explain the threshold value - it is really important to set it properly and that it affects performance.
-
-\subsection{Optimizer}
-Maybe this doesn't need to be a subsection? Mention how it works, link the ceres optimizer and explain that until now we were using it to fit 3 coefficients.
-
-\subsection{Choice of parameters}
-Explain that because of the optimizer, we are actually using 9 moments. Link this to the spectral uplifting section. Emphasize that using complex moments isn't realistic and we need mirroring. Also, the default threshold is 0.1, going below is quite unrealistic - possible but would take a lot of time.
-
-\section{Cube constraints}
-
-We added the option to constraint the input. Explain the color atlases that might be provided, how the cube is seeded with them.
-
-If not specified, the cube is seeded from the middle (use Munsell N5 that was pre-computed). Also explain the relationship of the size of the atlas with cube dimension.
-
-\section{Filling the cube}
-Just mention that we are basically doing what has already been done, however the cube is now growing in many directions (multi-threaded) and not only from the middle - would be nice to add progress images. Also, it might be nice to add progress images when seeding only from the middle.
-
-Also emphasize that the optimizer is currently not working ideally and that there are a few issues - probably encounters some unresolved division by zero? - therefore sometimes, there are unexplained gaps. Explain that we are solving this by trying out various different prior coefficients and that this is definitely an "ugly behavior".
