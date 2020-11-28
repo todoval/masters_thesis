@@ -113,25 +113,24 @@ There are two main downsides to using the CERES solver. Firstly, the maximum all
 Another, greater issue is the possibility of CERES getting stuck in local minima and therefore produce unsatisfactory results. This may happen due to the following reasons:
 \begin{itemize} \label{ceresDeficiency}
 	\item the dimension of the cube is too low, i.e. the prior coefficients are extremely distinct from the ideal coefficients, or
-	\item the number of coefficients is too high, i.e. the optimizer fails in improving all of them due to the 
+	\item the number of coefficients is too high, i.e. the optimizer fails in improving them as a whole
 \end{itemize}
 In such cases, the optimizer is not capable of leaving the local minima on its own. We therefore apply a simple heuristics, which consists of only slightly altering the first coefficient (or the first and the second) and running the optimizer again. We chose to alter the first coefficients because they influence the shape of the curve the most.
 
-The need for a heuristic also suggests considerable difference between the prior and the resulting coefficients, which implies distinct spectral curves. Such a behavior is undesired, as it may result in strong metameric artifacts.
+The need for a heuristic suggests considerable difference between the prior and the resulting coefficients, which implies distinct spectral curves. Such a behavior is undesired, as it may result in strong metameric artifacts. Fortunately, this heuristic is rarely triggered. We examine this in ref, where we analyze the success rate of the fitting and also demonstrate the curve differences by showing both the spectral curves of the atlas entries and of the fitted lattice points.
 
-Fortunately, the heuristic is rarely triggered. We examine this in ref, where we analyze the success rate of the fitting and also demonstrate the curve differences by showing both the spectral curves of the atlas entries and of the fitted lattice points.
+The sigmoid-based method approaches the starting points problem by selecting the point in the center of the cube and initializing its coefficients to zero. As these values are extremely close to the real values of coefficients, the optimizer does not have a problem with the fitting.
 
-The sigmoid-based method approaches the problem with starting points by selecting the point in the middle of the cube and initializing its coefficients to zero. As these values are extremely close to the real values of coefficients, the optimizer does not have a problem fitting it.
-
-As we do not require the user to always specify a color atlas, we provide an option for starting in the middle as well. This requires us to specify a set of prior coefficients for the middle point. We have determined it by iterating over multiple existing color atlases and searching for spectral curves that roughly evaluate to an RGB of (0.5, 0.5, 0.5). By obtaining the coefficients of such curves, we have eventually established the prior coefficients to be $\{0.5, 0, 0, 0, ... \}$, i.e. an array of zeroes except for the first coefficient. We use these prior coefficients for all available moments and cube dimensions.
+We inspire ourselves by this approach and provide an option for starting in the middle as well. This eliminates the obligation of the user to specify an atlas, i.e. if no atlas is specified, the cube is fitted from the center. However, providing such an option requires us to define a set of prior coefficients for the center point. We determine it by iterating over multiple existing color atlases and searching for spectral curves that roughly evaluate to an RGB of $(0.5, 0.5, 0.5)$. The coefficients of such curves are roughly $\{0.5, 0, 0, 0, ... \}$, i.e. all zeroes except for the first coefficient. We use these prior coefficients for all available moments and cube dimensions.
 
 \subsection{Cube fitting}
-Once the starting points are successfully fitted, we can use their coefficients as prior for other lattice points. We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where the lattice points are fitted in multiple \emph{fitting rounds} with each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle our fitting algorithm on in~\cref{alg:upliftingAlgMoments}.
+Once the starting points are successfully fitted, we can use their coefficients as prior for other lattice points. We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind our fitting algorithm in~\cref{alg:upliftingAlgMoments}.
 
 \begin{algorithm}[t!]
 	\caption{Fitting of the cube from starting points}
 	\label{alg:upliftingAlgMoments}
 	\begin{algorithmic}[1]
+		\State $n \gets $ user-defined number of coefficients
 		\State $fittingRound \gets$ $0$
 		\State $unfittedPoints \gets$ a list of all points in $RGBCube \setminus startingPoints$
 		\ForAll{$point \in unfittedPoints$}
@@ -142,6 +141,10 @@ Once the starting points are successfully fitted, we can use their coefficients 
 		\ForAll{$point \in currRoundPts$}
 		\ForAll{$fittedNeigbor \in point.neighbors$}
 		\State $point.coefs \gets fittedNeighbor.coefs$
+		\If{$fittedNeighbor \in atlasLatticePoint$} \label{algStep:conversionBegin}
+		\State{$spectrum \gets$ reconstruct spectrum from $fittedNeighbor.coefs$}	
+		\State{$fittedNeighbor.coefs \gets$ save $spectrum$ with $n$ coefficients} \label{algStep:conversionEnd}
+		\EndIf 
 		\State $currDistance \gets $ CERES.Solve($point.coefs$, $costFunctions$)
 		\If{$currDistance \leq point.fittingDistance$} \label{algStep:improvementStart}
 		\State $point.fittingDistance \gets currDistance$
@@ -171,11 +174,27 @@ Once the starting points are successfully fitted, we can use their coefficients 
 	\end{algorithmic}
 \end{algorithm}
 
-The core part of the algorithm is extremely similar to the algorithm used for fitting with sigmoids. However, we also add a heuristic-based improvement of the coefficients, implemented in steps~\ref{algStep:heuristicsStart} through~\ref{algStep:heuristicsEnd}. This part aims to minimize the shortcomings of the optimizer mentioned in~\cref{ceresDeficiency}.
+Similarly to the cube structure, our algorithm also extends the implementation provided in the sigmoid fitting. Two main features are added --- conversion of coefficient representation (i.e. \emph{coefficient recalculation}) and an improvement heuristic.
 
-We implement the heuristics by changing up the first coefficient a pre-defined amount of times. In constrast to the heuristics applied when fitting atlas entries, we ommit the changing of the second coefficient completely and we also use significantly less iterations when changing the first coefficient. This is because we do not necessarily require the points to be fitted in the given round. Even if the fitting fails, it may still be successful in the following rounds, where the coefficients of newly fitted neighbors might be used as prior. Additionaly, after the cube fitting is done, we still run an ``improvement'' step for the unsuccessful points. We discuss the specifics of this step in more detail in~\cref{ssec:cubeImprovement}.
+\paragraph{Coefficient recalculation}
 
-The reason behind using improvement heuristics both during and after fitting is both for improved time performance and a more desirable resulting shape of the spectral curves. Cube improvement after fitting is extremely time-consuming in contrast to a simple change in coefficients. Moreover, due to reasons explained in~\cref{ssec:cubeImprovement}, the resulting curve could take a shape dramatically distinct from the shape of its neighbors, which is an undesirable behavior. On the other hand, trying to improve all coefficients during the cube fitting would require a complicated heuristic including a lot of optimizer runs, which might eventually lead to a lowered time performance. We show all of these effects in ref.
+Up until now, all the uplifting techniques mentioned used the same number of coefficients per lattice point. The reasons for this were both consistency of the representation and the possibility of coefficient interpolation. The latter is especially useful in rendering, as interpolation of coefficients instead of whole spectra substantially increases performance.
+
+We, however, chose to use a different number of coefficients for atlas lattice points and regular points. Although this might sound counter-intuitive, we defend our decision by regarding the performance of the optimizer.
+
+As the time execution of the spectral reconstruction is dependant on the number of coefficients, it is evident that by increasing the number of coefficients, we increase the time requirements of the optimizer. Additonaly, having more coefficients implies more possibilities for the optimizer, which subsequently suggests the need for more iterations. This decreases performance even further.
+
+This does not pose a significant problem when fitting atlas lattice points only, as they usually make up only a small portion of the cube's entries. However, if we were to fit the whole cube with the maximum number of coefficients, we would find a noticeable performance decrease as opposed to fitting with, say, 3 coefficients.
+
+If we therefore wish to preserve representation consistency, we need to either accept the high time execution or give up the precision with which we fit atlas entries. The latter is not a realistic option, as the precise atlas fitting is the ultimate goal of this thesis. The increased time execution is similarly unfeasible, as it takes a lot more time. Furthermore, having more coefficients provides no real benefits to the resulting spectra (see ref). We therefore trade it off and allow the user to insert his own desired number of moments.
+
+The problem we solve in steps~\ref{algStep:conversionBegin} through~\ref{algStep:conversionEnd} of our algorithm is that arising when using atlas lattice points' coefficients as prior to regular points. By supporting two distinct representations of a cube's entry, we simply cannot use the same 9 coefficients as prior to, for example, a point that only requires 4. Luckily, this is easily solved --- we just add a \emph{recomputation} function which reconstructs the spectra of the prior point and subsequently saves it with the new, lower number of coefficients. Obviously, such a conversion causes significant loss of spectral information. However, as we do not need the regular lattice points' coefficients to evaluate to any specific spectra, this does not need to concern us.
+
+Up until now, we have not mentioned the effect of various numbers of coefficients on the interpolation phase of rendering, specifically on the coefficient interpolation. That is because our implementation, similarly to the sigmoid implementation, does not support this and is rather based on the interpolation of spectra. We explain the reasoning behind this in ref DOROBIT. However, if required, adding support for coefficient interpolation does not pose a problem --- we would only need to utilize the already existing recomputation function. We would need to proceed in the opposite manner as before, when we converted 9-coefficient representations to a smaller number of coefficients. Instead, we would need to convert the regular lattice points to their 9-coefficient representation, so as to preserve the spectral precision of the atlas lattice points.
+
+\paragraph{Improvement heuristic}
+
+To minimize the shortcomings of the optimizer mentioned in~\cref{ceresDeficiency}, we add a heuristic-based improvement of the coefficients, implemented in steps~\ref{algStep:heuristicsStart} through~\ref{algStep:heuristicsEnd}. Its implementation consists of solely slightly changing the first coefficient and running the optimizer again for a pre-defined number of times. In constrast to the heuristics applied when fitting atlas entries, we ommit the changing of the second coefficient completely and we also use significantly less iterations when changing the first coefficient. This is because we do not necessarily require the points to be fitted in the given round. Even if the fitting fails, it may still be successful in the following rounds, where the coefficients of newly fitted neighbors might be used as prior. Additionaly, after the cube fitting is done, we still run an ``improvement'' step for the unsuccessful points. We discuss the specifics of this step in~\cref{ssec:cubeImprovement}.
 
 The number of the fitting rounds depends both on the cube dimension and on the kind of atlas that has been used. If we choose not to input an atlas, the fitted cube ``grows'' from the middle, while seeding with an atlas makes the cube ``grow'' from many places, requiring a lot less round. We show the differences in , where we present the 
 
@@ -192,39 +211,44 @@ Obviosuly, improving the points as such has its drawbacks. We do not focus on th
 The more important issue is the shape of the resulting curve. Using seemingly ``random'' coefficients as prior suggests the resulting curve's shape to be unlike those of its neighbors, which may result in metameric artifacts.
 
 
+The reason behind using improvement heuristics both during and after fitting is both for improved time performance, i.e. a simple change of coefficients is less time-consuming that the process t
+
+and a more desirable resulting shape of the spectral curves. Cube improvement after fitting is extremely time-consuming in contrast to a simple change in coefficients. Moreover, due to reasons explained in~\cref{ssec:cubeImprovement}, the resulting curve could take a shape dramatically distinct from the shape of its neighbors, which is an undesirable behavior. On the other hand, trying to improve all coefficients during the cube fitting would require a complicated heuristic including a lot of optimizer runs, which might eventually lead to a lowered time performance. We show all of these effects in ref.
+
+
 multithreaded 
 
 We support from 2-8 moments then, however, we will talk about the number of coefficients (although user inserts moments). From now on we talk about coefficients. We do not support 1 or 2 coefs as they only create rovne ciary which does not reconstruct the color we want.
 
 \subsection{Cube storage}
 	
-Once the cube is completely fitted, its contents are written to a binary file. As we want the resulting file to be as small as possible, we save only the information crucial for rendering purposes. Following, we provide a list of contents of a cube file:
+Once the cube is completely fitted, its contents are written to a binary file. As we want the resulting file to be as small as possible, we save only the information crucial for the purposes of rendering. Following, we provide a list of contents of a cube file:
 \begin{itemize}
 	\item \emph{version}
-	\item \emph{features}
+	\item \emph{features}, i.e. whether the cube contains debug information
+	\item \emph{moment flag} --- a flag signifying that the cube is based on trigonometric moments. We extend the sigmoid cube structure with a sigmoid flag for an easier cube recognition in rendering software.
 	\item \emph{dimension}
-	\item \emph{coefficient count}, i.e. how many coefficients are used to reconstruct spectral information for every lattice point
 	\item \emph{illuminant} under which the cube has been fitted
 	\item \emph{fitting threshold}
 	\item for every point, we store:
 	\begin{itemize}
+		\item \emph{coefficient count}, which gives us information on whether the point is an atlas lattice point or a regular point
 		\item \emph{coefficients}
 		\item \emph{lattice RGB}
-		\item \emph{target RGB}
 		\item \emph{fitting distance}, i.e. the distance between lattice and target RGB, should be below fitting threshold
-		\item \emph{treated variable}, i.e. in which round was the point fitted. If the variable is equal to $-1$, it means the fitting has failed for this point.
+		\item in case the debug information is included, the entry also contains:
+		\begin{itemize}
+			\item \emph{target RGB}
+			\item \emph{treated variable}, i.e. in which round was the point fitted. If the variable is equal to $-1$, it means the fitting has failed for this point.
+		\end{itemize}
 	\end{itemize}
 \end{itemize}
 
-We therefore ommit parameters that serve for 
+If we were to use such a cube for the purposes of rendering, the knowledge of both the entry's treated paramter and its target RGB is unnecessary. The only benefit the treated parameter provides is the capability to issue a warning in case the cube is incomplete. This can, however, also be achieved by spectral reconstruction from the coefficients and the comparison of its RGB to that of the entry's lattice point.
 
-We do not, however, save all the cube's available information, but rather 
+Storing the target RGB variable also provides no irreplaceable advantages. The target RGB of all the lattice points can simply be computed from the cube's dimension parameter, rendering such variables useless.
 
- Their structure is different than those of the sigmoid cube as, obviously, they have different number of coefficients and we must also store the number of coefficients in the cube structure, which is not required in sigmoid.
-
-
-
-
+In addition to the storing of the cube, we also provide a function capable of loading such a cube and initializing its parameters. Borgtool utilizes this function in case the user wants to create a texture from an already existing cube or simply wants to check the correctness of the existing cube's parameters. The code of this function is also used during the integration in a rendering software.
 
 \section{ART integration}
 
@@ -236,3 +260,6 @@ We aim for allowing the user to add a color atlas, however we also provide an op
 When fitted from middle, the optimizer works very similarly to the sigmoid method (show pictures)
 
 Also explain the threshold value - it is really important to set it properly and that it affects performance.
+
+
+ as the interpolation of multiple spiky, non-similar spectra often results in a similarly uneven spectrum susceptible to metameric artifacts. Mention here that we NEED to have smooth spectra and that it is very important for interpolation. We therefore set parameters so that this is possible as this is the key. 

@@ -212,7 +212,7 @@ In addition to rendering reflections and refractions more convincingly, another 
 
 As already mentioned in~\cref{ssec:tristimulusRepres}, the human tristimulus perception has a significantly lower domain than the (practically infinite) spectral domain. Therefore, two different spectra can trigger the same cone response in the human eye and appear to have the same color (and, subsequently, to have the same RGB values), giving rise to a phenomenon called \emph{metamerism}. The two spectra evaluating to the same tristimulus values are called \emph{metamers}.
 
-In real world, metamerism is often perceived when the lighting conditions under which we observe metamers change. An example of this can be seen in~\cref{fig:metamerism}. Although we perceive the color of both objects to be the same under D65 illuminant (daylight), when illuminating the scene with x illuminant, the color changes.
+In real world, metamerism is often perceived when the lighting conditions under which we observe metamers change. An example of this can be seen in~\cref{fig:metamerism}, where the color of the presented spheres under the D65 illuminant is similar, while it clearly differs under the fluorescent F11 illuminant.
 
 Obviously, this behavior is irreproducible by an RGB renderer, as it cannot replicate the behavior of spectral reflectance under an illuminant.
 
@@ -220,7 +220,7 @@ Obviously, this behavior is irreproducible by an RGB renderer, as it cannot repl
 	\centering
 	{\sffamily
 		\begin{tabular}{cccc}
-			Spectral curves & D65 Illuminant & FL11 Illuminant 
+			Sphere reflectance curve & D65 Illuminant & F11 Illuminant 
 			\vspace{1em} \\
 			\includegraphics[width=.30\linewidth]{img/metamerism_first_curve.png}
 			&
@@ -235,8 +235,7 @@ Obviously, this behavior is irreproducible by an RGB renderer, as it cannot repl
 			\includegraphics[width=.30\linewidth]{img/metamerism_second_fl11.png}
 		\end{tabular}
 	}
-	\caption{The effects of metamerism. Left: Two different spectral reflectance curves, both corresponding to RGB=(0,255,0). Middle: A box in a cornell box rendered with a 
-		A Cornell box rendered with }
+	\caption{The effects of metamerism. Left: Two different spectral reflectance curves, both evaluating to roughly $RGB=(220,175,105)$ under D65. Middle and right: Renderings of a sphere with assigned reflectance curves under D65 and F11 illuminants}
 	\label{fig:metamerism}
 \end{figure}
 
