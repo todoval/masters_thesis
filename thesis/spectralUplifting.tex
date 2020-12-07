@@ -1,18 +1,16 @@
 \chapter{Spectral Uplifting}
 
-Although spectral rendering has multiple advantages, many renderers do not consider them to compensate for the ease of use and memory efficiency of the RGB representation. Even the physically-based phenomena can be ``faked'' by a few simple tricks, and, therefore, many conventional rendering systems are RGB-based. This implies that most textures and materials created for renderers are also RGB-based.
+While spectral rendering offers many advantages in terms of physical correctness, it is often neglected and traded off for the RGB color representation due to its ease of use and memory efficiency. Even the physically-based phenomena can be ``faked'', and, therefore, many conventional rendering systems are RGB-based. 
 
-However, spectral renderers are still used both in the research and in the commercial sphere (e.g. ART, Mitsuba, Manuka). In comparison to an RGB-based texture, however, creating spectral textures is much more complicated and usually requires a real-life model whose reflectance spectra can be measured with a spectrometer, which is, in many cases, virtually impossible. 
+Another reason for the disinclination towards spectral renderers is the deficiency of spectral textures. The process behind their creation is, in comparison to RGB-based textures, a lot more complicated. It usually requires a real-life model whose reflectance spectra must be measured with a spectrometer, which is, in many cases, virtually impossible.  
 
-The obvious solution is to convert the already existing RGB models to their spectral variants. We refer to this process as \emph{spectral uplifting}, however, other sources also use the term \emph{spectral upsampling}~\cite{sigmoidMethod}. 
+Spectral renderers are, nonetheless, used both in the research and in the commercial sphere (e.g. ART, Mitsuba, Manuka). To eliminate the need for a repeated creation of the textures from scratch, a technique for utilizing the already existing RGB models by converting them to their spectral variants has been proposed. We refer to this process as \emph{spectral uplifting}, however, other sources also use the term \emph{spectral upsampling}~\cite{sigmoidMethod}.
 
-By being able to uplift RGB values, we could utilize the RGB textures and materials and therefore eliminate the need for a repeated creation of the textures from scratch by the tedious process of measuring specific spectral values.
+Converting an RGB value into its respective spectrum poses multiple difficulties. As the relationship between the spectral and the RGB domain is not bijective (specifically, infinitely many spectral distributions render the same RGB values), distinctive approaches to the conversion process may render different spectral distributions. Although all of them might be correct in terms of the resulting RGB value, it is possible that none of them would be identical to spectral distribution measured with a spectrometer.
 
-However, converting an RGB value into its respective spectrum poses multiple difficulties. As the relationship between the spectral and RGB domain is not bijective (specifically, infinitely many spectral distributions render the same RGB values), distinctive approaches to the conversion process may render different spectral distributions. Although all of them might be correct in terms of the resulting RGB value, it is possible that none of them would be identical to spectral distribution measured with a spectrometer.
+This does not cause a problem under standard illuminant with regard to which the RGB values were uplifted. However, as already mentioned in~\cref{item:metamerism}, changing the illuminant may result in a rather significant color change due to metamerism. Therefore, our uplifted spectra might behave differently than they would in real world. sem dam obrazok ak ho budem mat
 
-This does not cause a problem under standard illuminant with regard to which the RGB values were uplifted. However, as already mentioned in~\cref{item:metamerism}, changing the illuminant causes distinct spectra to behave differently, which consequently results in \emph{metamerism}. Therefore, our uplifted spectra might behave differently than they would in real world. sem dam obrazok ak ho budem mat
-
-We begin this chapter by reviewing the already existing approaches to spectral uplifting. We then talk about a new technique, \emph{constrained spectral uplifting}, which provides means for solving the above mentioned problems.
+We begin this chapter by reviewing the already existing approaches to spectral uplifting. We then talk about a new technique, \emph{constrained spectral uplifting}, which provides means for eliminating metamerism during uplifting.
 
 \section{Uplifting methods} \label{sec:upliftingMethods}
 

@@ -194,7 +194,7 @@ However, the $\Delta E_{ab}^*$ error is prone to exaggerate the differences occu
 	
 \emph{Delta2000} attempts to remove these inaccuracies. Including the corrections added to Delta94, Delta2000 overall adds five correctional factors to the original $\Delta E_{ab}^*$ --- compensation factors for lightness, hue and chroma, compensation for neutral colors and, lastly, a hue rotation term for the problematic blue-violet region.
 
-From the listed Delta E equations, the Delta2000 error measurements are the most accurate in terms of human color difference perception~\cite{deltaEOverview}. However, in addition to a complicated formula, the  DOPISAT. Therefore, we opt for using the simple $\Delta E_{ab}^*$ in the practical part of this thesis.
+From the listed Delta E equations, the Delta2000 error measurements are the most accurate in terms of human color difference perception~\cite{deltaEOverview}. However, in addition to being computationally intensive, the Delta2000 equation is, by its nature, discontinous~\cite{delta2000Discontinuities}. Therefore, it is not a preferred measure to use in gradient-based optimizers. As we utilize such an optimizer in the practical part of this thesis, we opt for using the simple $\Delta E_{ab}^*$ error.
 
 \subsubsection{Other color spaces}
 
