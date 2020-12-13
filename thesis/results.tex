@@ -1,4 +1,4 @@
-\chapter{Results}
+\chapter{Results} \label{chap:results}
 
 In this chapter, we talk about the results. We start of by talking about the results achieved with different parameters during implementation and which we decided to use in the end. We then proceed to evaluate
 
@@ -175,11 +175,11 @@ The current cost functions, however, take into account the RGB differences only.
 		\caption{``blue sky'' patch, CD = 64, $d = 0.96$}
 		\label{fig:resultsCostFunctions_bs64}
 	\end{subfigure}
-	\caption{Comparison between the RGB cost functions and our method for fitting atlas lattice points}
+	\caption{Comparison between the RGB cost functions and our method for fitting main atlas lattice points}
 	\label{fig:resultsCostFunctions}
 \end{figure}
 
-We show an example of such behavior in~\cref{fig:resultsCostFunctions}, where we attempt to fit both the ``white'' and the ``blue sky'' patches of the Macbeth Color Checker to their atlas lattice points in both a 32 and a 64-dimensional cube. The magenta plot represents the results of fitting with only the three cost functions, which is definitely undesired.
+We show an example of such behavior in~\cref{fig:resultsCostFunctions}, where we attempt to fit both the ``white'' and the ``blue sky'' patches of the Macbeth Color Checker to their main atlas lattice points in both a 32 and a 64-dimensional cube. The magenta plot represents the results of fitting with only the three cost functions, which is definitely undesired.
 
 Note that we compare the optimized spectra not with the original atlas spectra, but with the spectra that is reconstructed from the original's coefficients. That way we can keep track of the optimizer's ability to mimic its input.
 
@@ -245,59 +245,6 @@ heuristics performance, overall runtime of the cube
 \section{Rendering}
 
 - which technique gives the best results (metamerism results)
-
-
-
-\begin{figure}[t]
-	\centering
-	\vspace{1em}
-	\begin{subfigure}[t]{0.49\textwidth}
-		\includegraphics[width=\linewidth]{img/results_perf_fitting_cd16.png}
-		\caption{Examples of reconst}
-		\label{fig:mom}
-	\end{subfigure} \hspace{0.1em}
-	\begin{subfigure}[t]{0.49\textwidth}
-		\includegraphics[width=\linewidth]{img/results_perf_fitting_9moments.png}
-		\caption{Reconstru.}
-		\label{fig:m}
-	\end{subfigure}
-	\caption{Exampod.}
-	\label{fig:temp}
-\end{figure}
-
-
-- for 9 moments (using the 4 atlases, Munsell Book of Colours, RAL, Macbeth color checker, Macbeth Color Checker SG):
-	- cd 8 = 1 absolutely not fitted, 355 overall, 278 were fitted immediately, 69 after first,
-	8 required second -> 19.44 percent therefore after first, 78.3 percent immediately, 2.2 percent after second 
-	
-	- cd 16 = all fitted, 851 overall, 787 fitted immediately (92.47 percent), 56 after first (6.58 percent), 8 required second (0.9 percent)
-	
-	- cd 32 = all fitted (1389), 1344 fitted immediately, 43 fitted after first, 2 required second
-	
-	- cd 64 = all fitted, 1648 fitted immediately, 15 fitted after first, 2 required second
-	 
-	 -cd 128 - 1861 fitted immediately, 8 fitted after first, no second
-	 
-	 -cd 256 - 1911 fitted immediately, 8 fitted after first, no second 
-	 
-- for 6 moments:
-	- cd 8 = all fitted, 355 overall, 326 fitted immediately (91.83 percent), 29 after first (8.16 percent), none required second
-	
-- for 3 moments:
-	- cd 8 = all fitted, 355 overall, 352 fitted immediately (99 percent), 3 after first (1 percent), none required second 
-	
-	- cd 16 = all fitted, 851 overall, 849 fitted immediately, 2 after first
-	
-	- cd 32 = all fitted immediately, 
-
-Other moments for cd16:
-9: 787 fitted immediately (92.47 percent), 56 after first (6.58 percent), 8 required second (0.9 percent)
-8: 809 fitted immediately, 40 after first, 2 after second
-7: 1 unfitted at all, 810 immediately, 39 after first, 2 after second
-6: all fitted, 833 immediately, 18 after first, 0 after second
-5: 833 immediately, 18 after first
-4: 842 fitted immediately, 6 after first, 3 after second
-3: 849 fitted immediately, 2 after first
 
 
 Also mention that it is multi-threaded and performance is not really a priority - the cube has to be created only once and then can be reused as much as the artists need.

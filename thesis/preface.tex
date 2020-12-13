@@ -1,3 +1,33 @@
 \chapter*{Introduction}
 \addcontentsline{toc}{chapter}{Introduction}
 
+Over the last few years, the demand for physical accuracy of the rendering process has grown substantially. By providing the renderer with the capability to physically simulate light transport, we can recreate natural phenomena such as metamerism, fluorescence, polarization, etc\ldots~The core issue is color representation, on which the emphasis is placed. Even though the most correct physically-based approach to color representation is representing it as it is in nature, which is a spectral distribution of wavelength, its advantages are, in many cases, not worth the complexity of the implementation.
+
+Therefore, vast majority of the conventional renderers internally represent color as an RGB tristimulus value, mainly due to the simplicity and the robustness of such systems. Additionally, almost all of the already existing assets, such as input textures and materials, are defined in RGB, as their creation and usage is fairly simple. Spectral assets require a real-life model whose reflectance must be measured with a spectrometer. Such a process is both tedious and, in many cases, even impossible.
+
+To preserve the physical correctness of the spectral rendering process while utilizing RGB textures as its input, a conversion from the color's RGB representation to its spectral variant is needed. Such process is called \emph{spectral uplifting}, also known as \emph{spectral upsampling}.
+
+However, the conversion process is not straightforward. As the RGB color space is intrinsically smaller than the gamut of visible light, there exist multiple (infinitely many) spectral representations of the same RGB color. Such spectral variations are called \emph{metamers}, and can cause inconsistencies under different lighting conditions. Various uplifting techniques might therefore provide different results, none of which necessarily have to match the real measured spectra.
+
+The goal of this thesis is to extend an already existing uplifting system with the capability to constrain itself with pre-defined spectra:RGB mappings, which must be preserved during the uplifting process. All the other RGB input values should return plausible synthetic data which smoothly interpolates the measured spectra.
+ 
+\section*{Related work}
+
+Currently, there exists no known software capable of constrained spectral uplifting. However, regular spectral uplifting has been 
+Although there currently exists no known software that does constrained spectral uplifting, there exist multiple that do normal spectral uplifting. They differ in the type of spectra they are capable of reconstructing, the type of gamut they can uplift, the color error caused by round trips etc. 
+
+The first techniques were faulty. \citet{upsamplingMacAdam} was capable of creating only blocky spectra which are unsuitable for smooth reflectances usually found in nature. \citet{upsamplingSmits}, although more widely used, had problem with errors occuring at round trips and outputted reflectance spectra above 1. In comparison to the previous two,~\citet{upsamplingMeng} created smooth spectra. However, he did not take energy conservation into account, which resulted in colors that have no real physical counterpart, i.e. no real material could produce such color. \citet{upsamplingOtsu} sometimes outperforms most of the existing techniques, but does not satisfy the (0,1) range criterion, clamping of which can produce color errors upon round trip.
+
+The one we build on is the one by~\citet{upsamplingJakobHanika}, which uses a pre-built model that is based on spectral representation with sigmoids. This algorithm produces smooth spectra satisfying constraints of reflectance spectra with negligible error. 
+
+Current state of the art is~\citet{upsamplingFluorescence}, which also builds upon the work of Jakob and Hanika, introducing new parameters for fluorescence. 
+
+\section*{Layout of this thesis}
+
+This thesis is structured as follows:
+
+In~\Cref{chap:colorScience}, we introduce the reader to light transport and color science. We explain the basic principles of human color perception, overview the existing color representations and, lastly, focus on the importance of color representation in rendering.
+
+\Cref{chap:spectralUplifting} summarizes the already existing spectral uplifting algorithms, placing special emphasis on the technique by~\citet{upsamplingJakobHanika}. Furthermore, it discusses the theory behind representation of spectra using moments.
+
+\Cref{chap:implementation} details the implementation of our extension to an already existing model and its utilization in a rendering software. It often refers to~\cref{chap:results}, where, in addition to discussing our results and comparing them to the non-constrained spectral uplifting, we provide multiple tests and experiments that assess the correctness of various possible implementations.

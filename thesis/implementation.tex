@@ -1,4 +1,4 @@
-\chapter{Implementation}
+\chapter{Implementation} \label{chap:implementation}
 
 We approach the problem of spectral uplifting similarly to~\citet{upsamplingJakobHanika}, where an uplifting model is created prior to rendering. Our implementation therefore consists of two parts --- \emph{model creation} and its subsequent \emph{utilization} in a rendering software. 
 
@@ -201,29 +201,34 @@ The problem we solve in steps~\ref{algStep:conversionBegin} through~\ref{algStep
 
 Up until now, we have not mentioned the effect of various numbers of coefficients on the interpolation phase of rendering, specifically on the coefficient interpolation. That is because our implementation, similarly to the sigmoid implementation, does not support this and is rather based on the interpolation of spectra. We explain the reasoning behind this in ref DOROBIT. However, if required, adding support for coefficient interpolation does not pose a problem --- we would only need to utilize the already existing recomputation function. We would need to proceed in the opposite manner as before, when we converted 9-coefficient representations to a smaller number of coefficients. Instead, we would need to convert the regular lattice points to their 9-coefficient representation, so as to preserve the spectral precision of the atlas lattice points.
 
-\paragraph{Improvement heuristic}
+\paragraph{Improvement heuristic} \label{par:improvementHeuristics}
 
-To minimize the shortcomings of the optimizer mentioned in~\cref{ceresDeficiency}, we add a heuristic-based improvement of the coefficients, implemented in steps~\ref{algStep:heuristicsStart} through~\ref{algStep:heuristicsEnd}. Its implementation consists of solely slightly changing the first coefficient and running the optimizer again for a pre-defined number of times. In constrast to the heuristics applied when fitting atlas entries, we ommit the changing of the second coefficient completely and we also use significantly less iterations when changing the first coefficient. This is because we do not necessarily require the points to be fitted in the given round. Even if the fitting fails, it may still be successful in the following rounds, where the coefficients of newly fitted neighbors might be used as prior. Additionaly, after the cube fitting is done, we still run an ``improvement'' step for the unsuccessful points. We discuss the specifics of this step in~\cref{ssec:cubeImprovement}.
+To minimize the shortcomings of the optimizer mentioned in~\cref{ceresDeficiency}, we add a heuristic-based improvement of the coefficients, implemented in steps~\ref{algStep:heuristicsStart} through~\ref{algStep:heuristicsEnd}. Its implementation consists of solely slightly changing the first coefficient and running the optimizer again for a pre-defined number of times. We do not implement any other improvement, so as to not cause significant performance decrease. This is because we do not necessarily require the points to be fitted in the given round. Even if the fitting fails, it may still be successful in the following rounds, where the coefficients of newly fitted neighbors might be used as prior. Additionaly, after the cube fitting is done, we still run an ``improvement'' step for the unsuccessful points. We discuss the specifics of this step in~\cref{ssec:cubeImprovement}.
 
 The number of the fitting rounds depends both on the cube dimension and on the kind of atlas that has been used. If we choose not to input an atlas, the fitted cube ``grows'' from the middle, while seeding with an atlas makes the cube ``grow'' from many places, requiring a lot less round. We show the differences in , where we present the 
 
-Obviously, neither option is better in terms of performance, as the number of fitted points must still be the same. 
+Obviously, neither option is better in terms of performance, as the number of fitted points must still be the same.
 
 \subsection{Cube improvement} \label{ssec:cubeImprovement}
 
-In extreme cases, such as when using too many coefficients to store entries of a cube with either a low dimension or a low fitting threshold, fitting some of the points may be unsuccessful even after applying heuristic improvements. We attempt to solve this by simply iterating over all the already fitted points and using their coefficients as prior for our point. We even apply heuristics similar to the ones used during the fitting of atlas entries. This shows to be useful especially if we have an extremely limited number of sets of prior coefficients, which happens usually if the overall size of the cube is small.
+In extreme cases, such as when using a very low fitting threshold, the fitting of some points may be unsuccessful even after applying heuristic improvements. Usually, this happens for the outermost points of the cube, i.e. either (1,1,1), (0,0,0), or points with at least one of their coordinates set to either maximum or minimum. We therefore carry out the following improvements in the order as listed and terminate if any of them succeed: 
+\begin{steps}
+	\item utilize the same improvement method as mentioned in~\cref{par:improvementHeuristics}, but increase the number of iterations \label{step:improvement1}
+	\item proceed in the same manner as in the previous step, but slightly alter all the coefficients instead of only the first \label{step:improvement2}
+	\item pass the current best coefficients to the optimizer and keep improving until the optimizer is no longer able to
+	\item if the point's distance to the (1,1,1) point in the cube is lower than it is to the (0,0,0) point, try setting the coefficients to $\{1, 0, 0, 0, \ldots\}$, as these are the coefficients for a constant curve obtaining the value 1 at every wavelength. Apply both~\ref{step:improvement1} and~\ref{step:improvement2} to these coefficients.\label{step:improvement4}
+	\item if, on the other hand, the point is closer to the (0,0,0) point, use the $\{0, 0, 0 ,\ldots\}$ coefficients as prior and proceed as in~\ref{step:improvement4}
+\end{steps}
 
-We call this process \emph{cube improvement}. Although the heuristic may seem simple and illogical at first, we must once again zvyraznit that it is aimed solely at the most extreme cases. As a matter of fact, it usually does not even get triggered and, if it does, it is only for a highly problematic point of two. We present the exact statistics in ref.
+We call this process \emph{cube improvement}. We once again emphasize that it is aimed only at the most extreme cases. As a matter of fact, there is a rather low chance of triggering it at all, and, even if it is triggered, the number of failed points to be improved is usually only one or two. Therefore, we do not concern ourselves with the performance of this process, as its runtime is negligible in comparison to the cube fitting.
 
-Obviosuly, improving the points as such has its drawbacks. We do not focus on the time performance, as we mainly want this part to be successful rather than fast. Moreover, as this step runs for a small set of numbers only, the execution time is negligible in comparison to other steps.
+We present the exact statistics on cube improvement in ref.
+
+The issue that could arise with this process is that of the following interpolation. By using
 
 The more important issue is the shape of the resulting curve. Using seemingly ``random'' coefficients as prior suggests the resulting curve's shape to be unlike those of its neighbors, which may result in metameric artifacts.
 
-
 The reason behind using improvement heuristics both during and after fitting is both for improved time performance, i.e. a simple change of coefficients is less time-consuming that the process t
-
-and a more desirable resulting shape of the spectral curves. Cube improvement after fitting is extremely time-consuming in contrast to a simple change in coefficients. Moreover, due to reasons explained in~\cref{ssec:cubeImprovement}, the resulting curve could take a shape dramatically distinct from the shape of its neighbors, which is an undesirable behavior. On the other hand, trying to improve all coefficients during the cube fitting would require a complicated heuristic including a lot of optimizer runs, which might eventually lead to a lowered time performance. We show all of these effects in ref.
-
 
 multithreaded 
 
