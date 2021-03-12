@@ -74,8 +74,8 @@ Another approach is to store all mappings in a table based on a 3D regular grid 
 
 Discretization of the RGB space does not, however, eliminate the need for uplifting RGB values that have no mapping in the spectral uplifting model. In such case, the unknown spectral reflectance values must be computed from the already existing mappings. As the RGB value we wish to uplift falls into a specific voxel in the RGB cube, without much elaboration, three straightforward methods of how to uplift it come to mind:
 \begin{enumerate}
-	\item interpolation of spectra in voxel corners
-	\item interpolation of coefficients in voxel corners
+	\item weighted interpolation of spectra in voxel corners
+	\item weighted interpolation of coefficients in voxel corners
 	\item using the coefficients of the nearest voxel corner (\emph{nearest neighbor} approach)
 \end{enumerate}
 
@@ -215,6 +215,8 @@ The mapping for the positive part is then defined as the negative part mirrored,
 
 Another proposed improvement to obtaining the coefficients is by focusing accuracy on important regions, also called \emph{warping}. This is achieved by means of a differentiable, bijective function that maps the wavelength range to the $[-\pi, 0]$ range and is used as a weighting function when computing coefficients. Warping of the signal is useful especially when using only a small number of coefficients, as they are unable to capture more complex curves, and it is highly recommended to always warp the signal if using less than 5 moments.
 
+We explain our choice of the signal mapping method used for the purposes of this thesis in ref, where we also provide results of experiments that affirm our decision.
+
 Note that using $m$ complex Fourier coefficients for storing a spectrum implies that that $m+1$ coefficients are actually saved. The $+1$ factor stands for the zeroth moment $c_0$, which is real in both the mirrored and the non-mirrored case. Therefore, overall, mirroring requires storing $m+1$ scalars, while non-mirroring requires $2m+1$ scalars.
 
 \paragraph{Reconstruction} 
@@ -238,28 +240,9 @@ The summary of the reconstruction process is as follows:
 
 We present examples of results obtained by the storage and subsequent reconstruction of reflectance spectra with the trigonometric moment method in~\cref{fig:momentsReconstructionComparison}, where we also compare the performance of different number of moments and different signal mapping techniques. For smooth spectra, even a small number of moments($m=3$) provide a quite accurate reconstruction (see~\cref{fig:momentsReconstructionPeters}). However, more complex spectra with sharper edges and spikes tend to lose detail and their reconstruction is a lot smoother. As seen in~\cref{fig:momentsReconstructionOur}, especially for the ``black'' and ``neutral35'' patches, even 7 moments are not capable of describing the original curve accurately.
 
-\begin{figure}[t]
-	\centering
-	\begin{subfigure}[t]{0.70\textwidth}
-		\includegraphics[width=\linewidth]{img/moments_reconstruction_legend.png}
-	\end{subfigure} \\
-	\vspace{1em}
-	\begin{subfigure}[t]{0.45\textwidth}
-		\includegraphics[width=\linewidth,height=0.2\textheight]{img/moments_reconstruction_Peters.png}
-		\caption{Examples of reconstruction of smooth spectra as provided by~\citet{trigonometricMomentsPaper}}
-		\label{fig:momentsReconstructionPeters}
-	\end{subfigure} \hspace{0.1em}
-	\begin{subfigure}[t]{0.45\textwidth}
-		\includegraphics[width=\linewidth]{img/moments_reconstruction_ours.png}
-		\caption{Reconstruction of spectra of the Macbeth chart as plotted by us. Top left: ``black'' patch; top right ``neutral35'' patch; bottom left: ``dark skin'' patch; bottom right: ``foliage'' patch}
-		\label{fig:momentsReconstructionOur}
-	\end{subfigure}
-	\caption{Examples of reconstruction with the trigonometric moment method}
-	\label{fig:momentsReconstructionComparison}
-\end{figure}
-
 Emission spectra perform even worse. To give an example, even a mirrored approach with $m=31$ is unable to reconstruct the most spiky details~\cite{trigonometricMomentsPaper}. However, as the focus of this thesis is purely on reflectance spectra, we most likely will not encounter a spectrum that would require such high number of moments.
 
-The optimal number of moments for a spectral reflectance curve depends on many factors, such as the shape of the curve, memory limitations and the accuracy for which we aim, either in terms of curve similarity or color error under various illuminants. We discuss these factors in ref, where we determine the requirements for a ``sufficient moment count'' and choose the signal mapping method most suitable for the purposes of this thesis.
+The optimal number of moments for a spectral reflectance curve depends on many factors, such as the shape of the curve, memory limitations and the accuracy for which we aim, either in terms of curve similarity or color error under various illuminants. We discuss these factors more thoroughly as we progress with this thesis, and explain our method for determining the ``sufficient moment count'' in~\cref{ssec:initialization}.
 
-Due to memory efficiency, smoother gradients, higher precision and multiple other reasons, thoroughly  explained in ref, we decide to use variable number of moments per an input reflectance spectrum. Therefore, although~\citet{trigonometricMomentsPaper} state that the interpolation of coefficients provides satisfactory results, our uplifting process cannot rely on this method for uplifting non-mapped RGB values. The only way in which to achieve this would be to reconstruct all the spectra in the corner voxels and subsequently save them with the same number of coefficients, which is not only less time efficient than interpolation of spectra, but could also result in slight discrepancies.
+Due to memory efficiency, smoother gradients, higher precision and multiple other reasons, thoroughly  explained in~\cref{chap:implementation}, we decide to use variable number of moments per an input reflectance spectrum. Therefore, although~\citet{trigonometricMomentsPaper} state that the interpolation of coefficients provides satisfactory results, our uplifting process cannot rely on this method for uplifting non-mapped RGB values. The only way in which to achieve this would be to reconstruct all the spectra in the corner voxels and subsequently save them with the same number of coefficients, which is not only less time efficient than interpolation of spectra, but could also result in slight discrepancies.
+
