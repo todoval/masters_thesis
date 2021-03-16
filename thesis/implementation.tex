@@ -51,36 +51,37 @@ The initialization of the cube is pretty straightforward, as all of its properti
 
 The loading of the atlases is a bit more complicated. Firstly, a single color atlas is inputted in a form of a simple .txt file, which contains merely a list of entries in a textual form as shown in~\cref{fig:macbethSampleText}. Therefore, it requires parsing.
 
-\begin{figure}[t]
+\begin{figure}
 	\lstset{
 		string=[s]{"}{"},
 		comment=[l]{:},
 		commentstyle=\color{black},
 		basicstyle=\scriptsize
 	}
-	\begin{lstlisting}
-Entry ID:   orange
----------------------------------------------------------------------------
-Description           :  "orange" patch of the Macbeth colour checker
-Type                  :  reflectance spectrum
-Fluorescence data     :  no
-Measurement device    :  
-Measured by           :  
-Measurement date      :  
-
-Sampling information
---------------------
-Type	    	      :  regular
-Start                 :  380.0 nm
-Increment             :  5.0 nm
-Maximum sample value  :  100.0
-
-ASCII sample data
------------------
-{6.143748,  5.192119,  4.867970,  5.092529,  4.717562,  4.663087,  4.455331,  4.562958,  4.517197,  4.536289,  4.454180,  4.543101,  4.491708, ... }
-
+	\begin{lstlisting}[label=lst:atlasEntry]
+	Entry ID:   orange
+	------------------------------------------------------------------------
+	Description           :  "orange" patch of the Macbeth colour checker
+	Type                  :  reflectance spectrum
+	Fluorescence data     :  no
+	Measurement device    :  
+	Measured by           :  
+	Measurement date      :  
+	
+	Sampling information
+	--------------------
+	Type	    	      :  regular
+	Start                 :  380.0 nm
+	Increment             :  5.0 nm
+	Maximum sample value  :  100.0
+	
+	ASCII sample data
+	-----------------
+	{6.143748,  5.192119,  4.867970,  5.092529,  4.717562,  4.663087, 
+	4.455331,  4.562958,  4.517197,  4.536289,
+	4.454180,  4.543101,  4.491708, ... }
 	\end{lstlisting}
-	\caption{A sample entry from the Macbeth Color Checker atlas.}
+	\caption{A sample entry from the Macbeth Color Checker atlas}
 	\label{fig:macbethSampleText}
 \end{figure}
 
@@ -94,7 +95,7 @@ The sufficiency of the representation is currently determined by a Delta E error
 
 We use the simple, non-modified Delta E error due to its continous nature and we set the maximum $\Delta E_{ab}^* = 1$, as that is the boundary under which the color error is not perceivable by a standard observer~\cite{maximumDeltaE}. As the vast majority of entries require more than 9 coefficients, we do not attempt to represent spectra with less than 6, and we set the maximum number to $c=17$, as that is roughly the boundary where the mean error tends to stabilize and not improve much with further increase of coefficient count (see figure).
 
-\subsection{Cube seeding}
+\subsection{Cube seeding} 
 
 In order to uplift the whole cube as described in~\cref{alg:upliftingAlgSigmoid}, we must first fit one or more \emph{starting points}, whose coefficients can then be used as prior for the fitting of other lattice points. For these purposes, we utilize the user-specified color atlas. The general idea behind this process is to copy the coefficients of atlas entries to specific lattice points, and then we use these coefficients as prior for fitting said lattice points. We refer to this process as \emph{seeding}, and term the seeded lattice points \emph{atlas lattice points}.
 
@@ -123,13 +124,56 @@ A realistic approach would be to create a complete injective mapping between the
 
 During the seeding process, it may occur that two atlas entries would fall into neighboring voxels, i.e. that they would share some of the voxel corners. We solve such collision by utilizing the possibility of one lattice point having multiple coefficient representations. In addition to coefficients and their count, we also store an entry ID per each representation, so as to later distinguish the reconstructed curves during rendering and decide which to employ, which we explain in more detail in ref.
 
-If two atlas entries fall into the same voxel, however, there is no way to determine the interpolation of which the user desires upon uplifting the RGB values inside said voxel. We therefore throw an error informing the user of the collision and suggesting the increase of the cube dimension.
+If two atlas entries fall into the same voxel, however, there is no way to determine the interpolation of which the user desires upon uplifting the RGB values inside said voxel. We therefore throw an error informing the user of the collision and suggesting to increase of the cube dimension.
 
-We show an example of cube seeded with the Munsell Book of Colour in fig. 
+We show an example of a cube seeded with the Munsell Book of Colour in~\cref{fig:seededCubeMCB}. Lattice points marked as black represent the seeded points. Note that a lot of these points store multiple coefficient representations.
+
+\begin{figure}[t!]
+	\centering
+	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
+	\captionsetup[subfigure]{justification=centering}
+	\begin{subfigure}[t]{0.22\textwidth}
+		\includegraphics[width=\linewidth]{img/seededCube_mcb1.png}
+		\label{fig:seededCube_mcb1}
+	\end{subfigure} \hspace{0.05em}
+	\begin{subfigure}[t]{0.22\textwidth}
+		\includegraphics[width=\linewidth]{img/seededCube_mcb2.png}
+		\label{fig:seededCube_mcb2}
+	\end{subfigure} \hspace{0.05em}
+	\begin{subfigure}[t]{0.22\textwidth}
+		\includegraphics[width=\linewidth]{img/seededCube_mcb3.png}
+		\label{fig:seededCube_mcb3}
+	\end{subfigure} \hspace{0.05em}
+	\begin{subfigure}[t]{0.22\textwidth}
+		\includegraphics[width=\linewidth]{img/seededCube_mcb4.png}
+		\label{fig:seededCube_mcb4}
+	\end{subfigure}
+	\caption{A 32-dimensional cube seeded with the Munsell Book of Colour}
+	\label{fig:seededCubeMCB}
+\end{figure}
 
 Constraining the uplifting process with an atlas is optional. If no atlas is inputted, all lattice points are regarded as regular lattice points and the cube is fitted from the middle in the same manner as the sigmoid cube. However, the resulting uplifting structure provides no advantages over the sigmoid cube.
 
-\subsection{Fitting of starting points}
+
+
+
+\begin{figure}[t]
+	\centering
+	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
+	\captionsetup[subfigure]{justification=centering}
+	\begin{subfigure}[t]{0.45\textwidth}
+		\includegraphics[width=\linewidth]{img/seededStarting_sigmoid.png}
+		\label{fig:seededStarting_sigmoid}
+	\end{subfigure} \hspace{0.2em}
+	\begin{subfigure}[t]{0.45\textwidth}
+		\includegraphics[width=\linewidth]{img/seededStarting_mcb.png}
+		\label{fig:seededStarting_mcb}
+	\end{subfigure}
+	\caption{Comparison of the placement of starting points when seeding with the Munsell Book of Colour (right) and when fitting from the middle with sigmoids (left)}
+	\label{fig:seededStartingPoints}
+\end{figure}
+
+\subsection{Fitting of starting points} \label{ssec:startingPointsFitting}
 
 By seeding the cube, we have appointed coefficients to some of the lattice points. These coefficients reconstruct a spectrum that evaluates to an RGB value which we denote as the \emph{lattice RGB}. The difference between the lattice and the target RGB is therefore equal to the distance between the lattice point and its assigned atlas entry in the cube. It is apparent that the distance may be higher than the defined fitting threshold. In such cases, we must ``improve'' upon the coefficients so that the resulting color difference is as low as possible.
 
@@ -137,19 +181,15 @@ Our problem of improving the coefficients satisfies the definition of the \emph{
 \begin{equation} \label{eq:nonLinearLeastSquares}
 	 \underset{x}{\text{minimize}} \hspace{0.5em} f(x) = \sum_{i} f_{i}(x)^{2},
 \end{equation}
-where $x= \{x_{0}, x_{1}, x_{2}, ... \}$ is a parameter block that we are trying to improve (i.e. our coefficients) and $f_{i}$ are so-called \emph{cost functions}. The definition of cost functions is dependant solely on the current problem. In our case, we primarily require to minimize the difference between the lattice and the target RGB. Our secondary requirement is for the shapes of the original atlas entry curve and the reflectance curve of the atlas lattice point to be similar. This gives rise to multiple choices for cost functions, such as using the difference between curves along with the Delta E error, using one or multiple cost functions for the RGB error etc\ldots After implementing some of them and testing their performance, the results of which we provide in ref, we decide on neglecting the shape similarity requirement and using three cost functions, each specifying the absolute difference in one of the three axes of the cube.
+where $x= \{x_{0}, x_{1}, x_{2}, ... \}$ is a parameter block that we are trying to improve (i.e. our coefficients) and $f_{i}$ are so-called \emph{cost functions}. The definition of cost functions is dependant solely on the current problem. In our case, we primarily require to minimize the difference between the lattice and the target RGB. Our secondary requirement is for the shapes of the original atlas entry curve and the reflectance curve of the atlas lattice point to be similar. This gives rise to multiple choices for cost functions, such as using the difference between curves along with the Delta E error, using one or multiple cost functions for the RGB error etc\ldots After implementing some of them and testing their performance, the results of which we provide in~\cref{ssec:costFunctions}, we decided on using four cost functions --- three for specifying the absolute difference in one of the three axes of the cube, and one for specifying average the distance between curves per wavelength sample.
 
-To solve an optimization problem defined in such a way, we use the CERES solver.
+To solve an optimization problem defined in the way as described, we use the CERES solver.
 
+\subsubsection{CERES solver} \label{sssec:ceresSolver}
 
- This is because such an error evidently points out the insufficient cube size for the given atlas, either due to the atlas's large size or due to its concentration around certain colors (e.g. the Page 14 from the Munsell Book of Colors as in ukazka).
+As already mentioned in~\cref{sec:upliftingMethods}, the CERES solver is an open-source library for solving large optimization problems such as our Non-linear Least Squares problem. It consists of two parts --- a \emph{modeling API} which provides tools for the construction of optimization problems, allowing us to set parameters such as maximum number of iterations of the optimizer or maximum number of consecutive nonmononotic steps; and a \emph{solver API} that controls the minimization algorithm.
 
-
-\subsubsection{CERES solver} \label{ssec:ceresSolver}
-
-As already mentioned in~\cref{sec:upliftingMethods}, the CERES solver is an open-source library for solving large optimization problems such as our Non-linear Least Squares problem. It consists of two parts --- a \emph{modeling API} which provides tools for the construction of optimization problems, allowing us to set parameters such as maximum number of iterations of the optimizer and maximum number of consecutive nonmononotic steps; and a \emph{solver API} that controls the minimization algorithm.
-
-To solve a Non-linear Least Squares problem, the solver requires us to specify only a so-called \emph{residual block}, which is a structure defined by the prior coefficients and the cost functions. During the execution, the solver tries to minimize the values of the cost functions (or \emph{residuals}) in the residual block. The execution is aborted and the current best parameter block returned when the solver achieves either the specified number of iterations or nonmonotonic steps. For more information on the specifics of the CERES solver, we refer the interested reader to its documentation by~\citet{ceresNonLinearLeastSquares}.
+To solve a Non-linear Least Squares problem, the solver requires us to specify only a so-called \emph{residual block}, which is a structure defined by the prior coefficients and the cost functions. During the execution, the solver attempts to minimize the values of the cost functions (or \emph{residuals}) in the residual block. The execution is aborted and the current best parameter block returned when the solver achieves either the specified number of iterations or nonmonotonic steps. For more information on the specifics of the CERES solver, we refer the interested reader to its documentation by~\citet{ceresNonLinearLeastSquares}.
 
 There are two main downsides to using the CERES solver. Firstly, the maximum allowed size for a parameter block when using a numeric cost function is 9. This means that we are not able to use more than 9 coefficients for storing a spectrum. This issue could be resolved by adding more residual blocks and combining their results. However, as the runtime of both fitting and rendering with 9 coefficients is already substantially high, we decide not to add such an option as it would most likely be unused.
 
@@ -166,7 +206,7 @@ The sigmoid-based method approaches the starting points problem by selecting the
 
 We inspire ourselves by this approach and provide an option for starting in the middle as well. This eliminates the obligation of the user to specify an atlas, i.e. if no atlas is specified, the cube is fitted from the center. However, providing such an option requires us to define a set of prior coefficients for the center point. We determine it by iterating over multiple existing color atlases and searching for spectral curves that roughly evaluate to an RGB of $(0.5, 0.5, 0.5)$. The coefficients of such curves are roughly $\{0.5, 0, 0, 0, ... \}$, i.e. all zeroes except for the first coefficient. We use these prior coefficients for all available moments and cube dimensions.
 
-\subsection{Cube fitting}
+\subsection{Cube fitting} \label{ssec:cubeFitting}
 Once the starting points are successfully fitted, we can use their coefficients as prior for other lattice points. We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind our fitting algorithm in~\cref{alg:upliftingAlgMoments}.
 
 \begin{algorithm}[t!]
@@ -309,5 +349,6 @@ When fitted from middle, the optimizer works very similarly to the sigmoid metho
 
 Also explain the threshold value - it is really important to set it properly and that it affects performance.
 
+This is because such an error evidently points out the insufficient cube size for the given atlas, either due to the atlas's large size or due to its concentration around certain colors (e.g. the Page 14 from the Munsell Book of Colors as in ukazka).
 
  as the interpolation of multiple spiky, non-similar spectra often results in a similarly uneven spectrum susceptible to metameric artifacts. Mention here that we NEED to have smooth spectra and that it is very important for interpolation. We therefore set parameters so that this is possible as this is the key. 

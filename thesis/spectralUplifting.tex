@@ -213,7 +213,7 @@ Therefore, an improvement to the mapping, called \emph{mirroring}, is proposed. 
 \end{equation}
 The mapping for the positive part is then defined as the negative part mirrored, i.e. $g(\varphi) = g(-\varphi)$ for all $\varphi\in[0,\pi]$, which results in smooth transitions at the boundaries. The Fourier coefficients are then computed for this mirrored signal only and the reconstruction also uses only that part of the signal. Although this might seem wasteful, the signal created by this approach is even and therefore requires only real Fourier coefficients for its representation, which benefits the storage requirements.
 
-Another proposed improvement to obtaining the coefficients is by focusing accuracy on important regions, also called \emph{warping}. This is achieved by means of a differentiable, bijective function that maps the wavelength range to the $[-\pi, 0]$ range and is used as a weighting function when computing coefficients. Warping of the signal is useful especially when using only a small number of coefficients, as they are unable to capture more complex curves, and it is highly recommended to always warp the signal if using less than 5 moments.
+Another proposed improvement to obtaining the coefficients is by focusing accuracy on important regions of the curve in terms of color reconstruction, also called \emph{warping}. This is achieved by means of a differentiable, bijective function that maps the wavelength range to the $[-\pi, 0]$ range and is used as a weighting function when computing coefficients. Warping of the signal is useful especially when using only a small number of coefficients, as they are unable to capture more complex curves, and it is highly recommended to always warp the signal if using less than 5 moments.
 
 We explain our choice of the signal mapping method used for the purposes of this thesis in ref, where we also provide results of experiments that affirm our decision.
 
@@ -239,6 +239,27 @@ The summary of the reconstruction process is as follows:
 \end{enumerate}
 
 We present examples of results obtained by the storage and subsequent reconstruction of reflectance spectra with the trigonometric moment method in~\cref{fig:momentsReconstructionComparison}, where we also compare the performance of different number of moments and different signal mapping techniques. For smooth spectra, even a small number of moments($m=3$) provide a quite accurate reconstruction (see~\cref{fig:momentsReconstructionPeters}). However, more complex spectra with sharper edges and spikes tend to lose detail and their reconstruction is a lot smoother. As seen in~\cref{fig:momentsReconstructionOur}, especially for the ``black'' and ``neutral35'' patches, even 7 moments are not capable of describing the original curve accurately.
+
+\begin{figure}[t]
+	\centering
+	\begin{subfigure}[t]{0.70\textwidth}
+		\includegraphics[width=\linewidth]{img/moments_reconstruction_legend.png}
+	\end{subfigure} \\
+	\vspace{1em}
+	\begin{subfigure}[t]{0.45\textwidth}
+		\includegraphics[width=\linewidth,height=0.2\textheight]{img/moments_reconstruction_Peters.png}
+		\caption{Examples of reconstruction of smooth spectra as provided by~\citet{trigonometricMomentsPaper}}
+		\label{fig:momentsReconstructionPeters}
+	\end{subfigure} \hspace{0.1em}
+	\begin{subfigure}[t]{0.45\textwidth}
+		\includegraphics[width=\linewidth]{img/moments_reconstruction_ours.png}
+		\caption{Reconstruction of spectra of the Macbeth chart as plotted by us. Top left: ``black'' patch; top right ``neutral35'' patch; bottom left: ``dark skin'' patch; bottom right: ``foliage'' patch}
+		\label{fig:momentsReconstructionOur}
+	\end{subfigure}
+	\caption{Examples of reconstruction with the trigonometric moment method}
+	\label{fig:momentsReconstructionComparison}
+\end{figure}
+
 
 Emission spectra perform even worse. To give an example, even a mirrored approach with $m=31$ is unable to reconstruct the most spiky details~\cite{trigonometricMomentsPaper}. However, as the focus of this thesis is purely on reflectance spectra, we most likely will not encounter a spectrum that would require such high number of moments.
 
