@@ -26,7 +26,7 @@ Therefore, it is sufficient for the regular lattice points to be represented wit
 
 In addition to supporting variable number of coefficients (ranging from 3 to 24), the trigonometric moment cube also supports the possibility of a multiple coefficient representations per lattice point. The sole purpose of such extension is to lower the cube size requirements upon constraining, which we address more thoroughly in ref.
 
-In addition to the cube structure, the uplifting process of the trigonometric moment cube is also similar to the one of the sigmoid cube, which closely follows~\cref{alg:upliftingAlgSigmoid}. Its main distinctions are in the constraining process (which the sigmoid cube lacks) and in the first round of fitting.
+In addition to the cube structure, the uplifting process of the trigonometric moment cube is also similar to the one of the sigmoid cube, which closely follows~\cref{alg:upliftingAlgSigmoid}. Its main distinctions are in the constraining process (which the sigmoid cube lacks) and in the first round of optimizing, or, as we refer to from now on, \emph{fitting}.
 
 Following, we name the individual steps of the process, which we then analyze in greater detail.
 \begin{enumerate}
@@ -150,6 +150,8 @@ We show an example of a cube seeded and subsequently fitted with the Munsell Boo
 
 Constraining the uplifting process with an atlas is optional. If no atlas is inputted, all lattice points are regarded as regular lattice points and the cube is fitted from the middle in the same manner as the sigmoid cube. However, the resulting uplifting structure provides no advantages over the sigmoid cube.
 
+Supporting this option requires us to specify 3 prior coefficients for the center point, i.e. for a lattice points whose spectral curve roughly evaluates to an RGB of $(0.5, 0.5, 0.5)$. By storing spectral curves that roughly evaluate to such RGB with the trigonometric moments, we observe that the coefficients roughly evaluate to $\{0.5, 0, 0\}$. Therefore, we use them as prior.
+
 We provide a comparison between the starting points when seeding from the middle (either with our or the sigmoid method) and when seeding with an atlas in~\cref{fig:seededStartingPoints}, so as to have a rough idea of their placement.
 
 \begin{figure}[t]
@@ -176,9 +178,9 @@ Our problem of improving the coefficients satisfies the definition of the \emph{
 \begin{equation} \label{eq:nonLinearLeastSquares}
 	 \underset{x}{\text{minimize}} \hspace{0.5em} f(x) = \sum_{i} f_{i}(x)^{2},
 \end{equation}
-where $x= \{x_{0}, x_{1}, x_{2}, ... \}$ is a parameter block that we are trying to improve (i.e. our coefficients) and $f_{i}$ are so-called \emph{cost functions}. The definition of cost functions is dependant solely on the current problem. In our case, we primarily require to minimize the difference between the lattice and the target RGB. Our secondary requirement is for the shapes of the original atlas entry curve and the reflectance curve of the atlas lattice point to be similar. This gives rise to multiple choices for cost functions, such as using the difference between curves along with the Delta E error, using one or multiple cost functions for the RGB error etc\ldots After implementing some of them and testing their performance, the results of which we provide in~\cref{ssec:costFunctions}, we decided on using four cost functions --- three for specifying the absolute difference in one of the three axes of the cube, and one for specifying the average distance between curves per wavelength sample.
+where $x= \{x_{0}, x_{1}, x_{2}, ... \}$ is a parameter block that we are trying to improve (i.e. our coefficients) and $f_{i}$ are so-called \emph{cost functions}. The definition of cost functions is dependent solely on the current problem. In our case, we primarily require to minimize the difference between the lattice and the target RGB. Our secondary requirement is for the shapes of the original atlas entry curve and the reflectance curve of the atlas lattice point to be similar. This gives rise to multiple choices for cost functions, such as using the difference between curves along with the Delta E error, using one or multiple cost functions for the RGB error etc\ldots After implementing some of them and testing their performance, the results of which we provide in~\cref{ssec:costFunctions}, we decided on using four cost functions --- three for specifying the absolute difference in one of the three axes of the cube, and one for specifying the average distance between curves per wavelength sample. We also include a heuristic which sets the value of the fourth cost function to 0 if the curve distance falls below a certain threshold, and iteratively increases the threshold if the optimizer fails. The reasoning behind this is also explained in~\cref{ssec:costFunctions}.
 
-To solve an optimization problem defined in the way as described above, we use the CERES solver.
+To solve an optimization problem defined in the way as described above, we use the CERES solver. We 
 
 \subsubsection{CERES solver} \label{sssec:ceresSolver}
 
@@ -186,29 +188,51 @@ As already mentioned in~\cref{sec:upliftingMethods}, the CERES solver is an open
 
 To solve a Non-linear Least Squares problem, the solver requires us to specify only a so-called \emph{residual block}, which is a structure defined by the prior coefficients and the cost functions. During the execution, the solver attempts to minimize the values of the cost functions (or \emph{residuals}) in the residual block. The execution is aborted and the current best parameter block returned when the solver achieves either the specified number of iterations or nonmonotonic steps. For more information on the specifics of the CERES solver, we refer the interested reader to its documentation by~\citet{ceresNonLinearLeastSquares}.
 
-There is one main downsides to using the CERES solver. As it is designed to handle very large, sparse problems where every residual term depends on only a few of the input parameters, it is not ideal for solving problems with only one large parameter block. If it is presented with such a problem, its likelihood of getting stuck in local minima and therefore producing unsatisfactory results increases. 
+There is one main downside to using the CERES solver. As it was designed to handle very large, sparse problems where every residual term depends on only a few of the input parameters, it is not ideal for solving problems with only one large parameter block, i.e. it might get stuck in local minima and therefore produce unsatisfactory results. Unfortunately, if an atlas lattice point is represented with a high number of coefficients, our optimization problem falls into this category.
 
-As the atlas lattice points occasionally need to have a rather high number of seemingly unrelated coefficients as parameters, it falls into this category.
+We solve such problematic cases by applying a simple heuristic, which consists of slightly altering the first coefficient (as it has the highest influence on the shape of the curve) and running the optimizer again. However, although such an optimization greatly improves the overall performance of fitting, it remains insufficient for too high a number of coefficients, i.e. the threshold for the fourth residual must be increased to values extremely high and, by then, it loses resemblance to the original shape.
 
-Therefore, the more coefficients we use for the representation of atlas lattice point, the more likely we are to encounter the optimizer's failure.
+Therefore, we implement another heuristic improvement --- if the coefficient count is higher than 14, we let the optimizer optimize only the first 4 coefficients while leaving the others constant. We use the threshold of $c > 14$ as that is roughly the boundary where the fitted curves begin to show undesired artifacts, and we optimize the first 4 coefficients because their number is both low enough for the optimizer to handle without errors, and high enough so we give the fitting process enough freedom without it having to resort to sinusodial-like shapes.
 
+We summarize the fitting process of the starting points, including the utilization of threshold for our fourth cost function (see~\cref{ssec:costFunctions}), in~\cref{alg:fitting_alp}.
 
-In such cases, the optimizer is not capable of leaving the local minima on its own. We therefore apply a simple heuristics, which consists of only slightly altering the first coefficient (or the first and the second) and running the optimizer again. We chose to alter the first coefficients because they influence the shape of the curve the most.
-
-The need for a heuristic suggests considerable difference between the prior and the resulting coefficients, which implies distinct spectral curves. Such a behavior is undesired, as it may result in strong metameric artifacts. Fortunately, this heuristic is rarely triggered. We examine this in ref, where we analyze the success rate of the fitting and also demonstrate the curve differences by showing both the spectral curves of the atlas entries and of the fitted lattice points.
-
-The sigmoid-based method approaches the starting points problem by selecting the point in the center of the cube and initializing its coefficients to zero. As these values are extremely close to the real values of coefficients, the optimizer does not have a problem with the fitting.
-
-We inspire ourselves by this approach and provide an option for starting in the middle as well. This eliminates the obligation of the user to specify an atlas, i.e. if no atlas is specified, the cube is fitted from the center. However, providing such an option requires us to define a set of prior coefficients for the center point. We determine it by iterating over multiple existing color atlases and searching for spectral curves that roughly evaluate to an RGB of $(0.5, 0.5, 0.5)$. The coefficients of such curves are roughly $\{0.5, 0, 0, 0, ... \}$, i.e. all zeroes except for the first coefficient. We use these prior coefficients for all available moments and cube dimensions.
+\begin{algorithm}[t!]
+	\caption{Fitting of one coefficient representation of a $point$ from atlas lattice points}
+	\label{alg:fitting_alp}
+	\begin{algorithmic}[1]
+		\State $threshold \gets 0.001$
+		\While {$threshold < 1$}
+		\State $coefsToFit \gets$ either the first 4 coefficients or all of them depending on the coefficient count of $point$
+		\State $i \gets 0$
+		\While optimizer is unsuccessful \textbf{and} $i < maxIterations$
+		\State heuristically change $coefsToFit[0]$
+		\State run the optimizer with parameters $coefsToFit$ and threshold set to $threshold$
+		\State $i++$
+		\EndWhile
+		\If{optimizer was successful}
+		\State $point.coefs \gets coefsToFit$
+		\State break
+		\EndIf
+		\State increase $threshold$
+		\EndWhile
+	\end{algorithmic}
+\end{algorithm}
 
 \subsection{Cube fitting} \label{ssec:cubeFitting}
-Once the starting points are successfully fitted, we can use their coefficients as prior for other lattice points. We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind our fitting algorithm in~\cref{alg:upliftingAlgMoments}.
+
+As the atlas lattice points are represented with a higher number of coefficients and may even contain multiple coefficient representations, they cannot be directly used as prior for the regular lattice points. First, they must be ``converted'' into a lower-dimensional representation.
+
+We refer to the conversion process as \emph{coefficient recalculation}. It consists of reconstructing the reflectance spectrum of the atlas lattice point and subsequently saving it with 3 coefficients. Obviously, such a process causes significant loss of spectral information. However, as it still preserves the rough outline of the curve, this actually works to the benefit of the uplifting system --- due to the similarity of their curve, it does not create color artifacts between the atlas lattice points and regular points.
+
+If a coefficient recalculation of an atlas lattice point with multiple fits is required, we interpolate the spectra of all its fits and save that with 3 coefficients. In terms of the smoothness of color gradients in the cube, this approach performs substantially better than if we were to pick one of the fits and work with it. That is because, if we were to uplift the voxel seeded with the atlas lattice point with the fit that was not picked, the color difference under a different illuminant between the two voxels would be noticeable.
+
+Once the starting points are successfully fitted, we can use their coefficients as prior for other lattice points.
+We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind our fitting algorithm in~\cref{alg:upliftingAlgMoments}.
 
 \begin{algorithm}[t!]
 	\caption{Fitting of the cube from starting points}
 	\label{alg:upliftingAlgMoments}
 	\begin{algorithmic}[1]
-		\State $n \gets $ user-defined number of coefficients
 		\State $fittingRound \gets$ $0$
 		\State $unfittedPoints \gets$ a list of all points in $RGBCube \setminus startingPoints$
 		\ForAll{$point \in unfittedPoints$}
@@ -217,33 +241,23 @@ Once the starting points are successfully fitted, we can use their coefficients 
 		\While {$unfittedPoints$ is not empty}
 		\State{$currRoundPts \gets$ points from $unfittedPoints$ that have at least one fitted neighbor}
 		\ForAll{$point \in currRoundPts$}
-		\ForAll{$fittedNeigbor \in point.neighbors$}
+		\ForAll{$fittedNeigbor \in $ fitted neighbors of $point$}
+		\If{$fittedNeighbor \in atlasLatticePoint$}
+		\State{$point.coefs \gets$ recalculateCoefs($fittedNeighbor.coefs$)} \label{algStep:coefficientRecomputation}
+		\Else
 		\State $point.coefs \gets fittedNeighbor.coefs$
-		\If{$fittedNeighbor \in atlasLatticePoint$} \label{algStep:conversionBegin}
-		\State{$spectrum \gets$ reconstruct spectrum from $fittedNeighbor.coefs$}	
-		\State{$fittedNeighbor.coefs \gets$ save $spectrum$ with $n$ coefficients} \label{algStep:conversionEnd}
 		\EndIf 
-		\State $currDistance \gets $ CERES.Solve($point.coefs$, $costFunctions$)
-		\If{$currDistance \leq point.fittingDistance$} \label{algStep:improvementStart}
-		\State $point.fittingDistance \gets currDistance$
-		\State $point.coefs \gets $ coefficients from solver
+		\State $[sDist,sCoefs]\gets$ CERES.Solve($point.coefs$, $costFunctions$)
+		\If{$sDist \leq point.fittingDistance$}
+		\State $point.fittingDistance \gets sDist$
+		\State $point.coefs \gets sCoefs$
 		\EndIf
-		\If{$currDistance \leq fittingThreshold$}
+		\If{$cDist \leq fittingThreshold$}
+		\State $point.treated = true$
 		\State break
-		\EndIf \label{algStep:improvementEnd}
+		\EndIf
 		\EndFor
-		\While{$point.fittingDistance > fittingThreshold$} \label{algStep:heuristicsStart}
-		\State use heuristics to improve upon the current coefficients
-		\State run the solver again
-		\State repeat steps \ref{algStep:improvementStart} $-$ \ref{algStep:improvementEnd}
-		\If{too many iterations of the while cycle have been performed}
-		\State break \label{algStep:heuristicsEnd}
-		\EndIf
-		\EndWhile
-		\If{$point.fittingDistance > fittingThreshold$}
-		\State remove $point$ from $unfittedPoints$
-		\EndIf
-		\If{$point$ has tried the coefficients of all of its neighbors}
+		\If{$point.fittingDistance > fittingThreshold$ \textbf{or} $point$ has tried the coefficients of all of its neighbors}
 		\State remove $point$ from $unfittedPoints$
 		\EndIf
 		\EndFor	
@@ -252,23 +266,7 @@ Once the starting points are successfully fitted, we can use their coefficients 
 	\end{algorithmic}
 \end{algorithm}
 
-Similarly to the cube structure, our algorithm also extends the implementation provided in the sigmoid fitting. Two main features are added --- conversion of coefficient representation (i.e. \emph{coefficient recalculation}) and an improvement heuristic.
-
-\paragraph{Coefficient recalculation}
-
-Up until now, all the uplifting techniques mentioned used the same number of coefficients per lattice point. The reasons for this were both consistency of the representation and the possibility of coefficient interpolation. The latter is especially useful in rendering, as interpolation of coefficients instead of whole spectra substantially increases performance.
-
-We, however, chose to use a different number of coefficients for atlas lattice points and regular points. Although this might sound counter-intuitive, we defend our decision by regarding the performance of the optimizer.
-
-As the time execution of the spectral reconstruction is dependant on the number of coefficients, it is evident that by increasing the number of coefficients, we increase the time requirements of the optimizer. Additonaly, having more coefficients implies more possibilities for the optimizer, which subsequently suggests the need for more iterations. This decreases performance even further.
-
-This does not pose a significant problem when fitting atlas lattice points only, as they usually make up only a small portion of the cube's entries. However, if we were to fit the whole cube with the maximum number of coefficients, we would find a noticeable performance decrease as opposed to fitting with, say, 3 coefficients.
-
-If we therefore wish to preserve representation consistency, we need to either accept the high time execution or give up the precision with which we fit atlas entries. The latter is not a realistic option, as the precise atlas fitting is the ultimate goal of this thesis. The increased time execution is similarly unfeasible, as it takes a lot more time. Furthermore, having more coefficients provides no real benefits to the resulting spectra (see ref). We therefore trade it off and allow the user to insert his own desired number of moments.
-
-The problem we solve in steps~\ref{algStep:conversionBegin} through~\ref{algStep:conversionEnd} of our algorithm is that arising when using atlas lattice points' coefficients as prior to regular points. By supporting two distinct representations of a cube's entry, we simply cannot use the same 9 coefficients as prior to, for example, a point that only requires 4. Luckily, this is easily solved --- we just add a \emph{recomputation} function which reconstructs the spectra of the prior point and subsequently saves it with the new, lower number of coefficients. Obviously, such a conversion causes significant loss of spectral information. However, as we do not need the regular lattice points' coefficients to evaluate to any specific spectra, this does not need to concern us.
-
-Up until now, we have not mentioned the effect of various numbers of coefficients on the interpolation phase of rendering, specifically on the coefficient interpolation. That is because our implementation, similarly to the sigmoid implementation, does not support this and is rather based on the interpolation of spectra. We explain the reasoning behind this in ref DOROBIT. However, if required, adding support for coefficient interpolation does not pose a problem --- we would only need to utilize the already existing recomputation function. We would need to proceed in the opposite manner as before, when we converted 9-coefficient representations to a smaller number of coefficients. Instead, we would need to convert the regular lattice points to their 9-coefficient representation, so as to preserve the spectral precision of the atlas lattice points.
+\subsection{Cube improvement} \label{ssec:cubeImprovement}
 
 \paragraph{Improvement heuristic} \label{par:improvementHeuristics}
 
@@ -278,7 +276,6 @@ The number of the fitting rounds depends both on the cube dimension and on the k
 
 Obviously, neither option is better in terms of performance, as the number of fitted points must still be the same.
 
-\subsection{Cube improvement} \label{ssec:cubeImprovement}
 
 In extreme cases, such as when using a very low fitting threshold, the fitting of some points may be unsuccessful even after applying heuristic improvements. Usually, this happens for the outermost points of the cube, i.e. either (1,1,1), (0,0,0), or points with at least one of their coordinates set to either maximum or minimum. We therefore carry out the following improvements in the order as listed and terminate if any of them succeed: 
 \begin{steps}

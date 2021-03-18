@@ -51,20 +51,20 @@ Another approach is to store all mappings in a table based on a 3D regular grid 
 	\label{alg:upliftingAlgSigmoid}
 	\begin{algorithmic}[1]
 		\State create $RGBCube$ with empty RGB:spectra mappings
-		\State $unfittedPoints \gets$ a list of all lattice points in $RGBCube$
+		\State $unmappedPoints \gets$ a list of all lattice points in $RGBCube$
 		\State $centerPoint \gets$ index of the middle of $RGBCube$
 		\Statex \Comment{$RGBCube[centerPoint].rgb \simeq (0.5,0.5,0.5)$}
 		\State $centerPoint.coefficients \gets (0,0,0)$
 		\Statex \Comment ``guess'' the coefficients at $centerPoint$
 		\State run the CERES optimizer for $RGBCube[centerPoint]$
-		\State remove $RGBCube[centerPoint]$ from $unfittedPoints$
-		\While {$unfittedPoints$ is not empty}
-		\ForAll{$point \in unfittedPoints$}
+		\State remove $RGBCube[centerPoint]$ from $unmappedPoints$
+		\While {$unmappedPoints$ is not empty}
+		\ForAll{$point \in unmappedPoints$}
 		\If{$point$ has a neighbor $v$ with defined coefficients}
 		\State $point.coefficients \gets v.coefficients$
 		\State run the CERES optimizer for $point$
 		\If{optimization was successfull}
-		\State remove $point$ from $unfittedPoints$
+		\State remove $point$ from $unmappedPoints$
 		\EndIf
 		\EndIf
 		\EndFor
