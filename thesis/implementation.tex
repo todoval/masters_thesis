@@ -194,7 +194,7 @@ We solve such problematic cases by applying a simple heuristic, which consists o
 
 Therefore, we implement another heuristic improvement --- if the coefficient count is higher than 14, we let the optimizer optimize only the first 4 coefficients while leaving the others constant. We use the threshold of $c > 14$ as that is roughly the boundary where the fitted curves begin to show undesired artifacts, and we optimize the first 4 coefficients because their number is both low enough for the optimizer to handle without errors, and high enough so we give the fitting process enough freedom without it having to resort to sinusodial-like shapes.
 
-We summarize the fitting process of the starting points, including the utilization of threshold for our fourth cost function (see~\cref{ssec:costFunctions}), in~\cref{alg:fitting_alp}.
+We summarize the fitting process of the starting points, including the utilization of threshold for our fourth cost function (see~\cref{ssec:costFunctions}), in~\cref{alg:fitting_alp}. If the optimizer is unable to fit an atlas lattice points, we throw a warning and convert it into a regular lattice point. However, as of yet, we have not encountered a failure.
 
 \begin{algorithm}[t!]
 	\caption{Fitting of one coefficient representation of a $point$ from atlas lattice points}
@@ -222,12 +222,61 @@ We summarize the fitting process of the starting points, including the utilizati
 
 As the atlas lattice points are represented with a higher number of coefficients and may even contain multiple coefficient representations, they cannot be directly used as prior for the regular lattice points. First, they must be ``converted'' into a lower-dimensional representation.
 
-We refer to the conversion process as \emph{coefficient recalculation}. It consists of reconstructing the reflectance spectrum of the atlas lattice point and subsequently saving it with 3 coefficients. Obviously, such a process causes significant loss of spectral information. However, as it still preserves the rough outline of the curve, this actually works to the benefit of the uplifting system --- due to the similarity of their curve, it does not create color artifacts between the atlas lattice points and regular points.
+We refer to the conversion process as \emph{coefficient recalculation}. It consists of reconstructing the reflectance spectrum of the atlas lattice point and subsequently saving it with 3 coefficients. Although this process causes significant loss of spectral information, it preserves the rough outline of the curve. This works to our benefit --- it reduces the likelihood of significant color artifacts between the atlas lattice points and regular lattice points while keeping the spectra smooth.
 
-If a coefficient recalculation of an atlas lattice point with multiple fits is required, we interpolate the spectra of all its fits and save that with 3 coefficients. In terms of the smoothness of color gradients in the cube, this approach performs substantially better than if we were to pick one of the fits and work with it. That is because, if we were to uplift the voxel seeded with the atlas lattice point with the fit that was not picked, the color difference under a different illuminant between the two voxels would be noticeable.
 
-Once the starting points are successfully fitted, we can use their coefficients as prior for other lattice points.
-We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind our fitting algorithm in~\cref{alg:upliftingAlgMoments}.
+\begin{figure}[t!]
+	\centering
+	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
+	\includegraphics[width=0.8\linewidth]{img/recalculation.png}
+	\caption{Comparison of coefficient recalculation techniques. Left: first fitted entry; right: second fitted entry; middle: result of recalculation}
+	\label{fig:test}
+\end{figure}
+
+\begin{figure}[t!]
+	\centering
+	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
+	\captionsetup[subfigure]{justification=centering}
+	\begin{subfigure}[t]{0.30\textwidth}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitGreen.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
+	\setlength{\abovecaptionskip}{15pt}
+	\caption{Recalculation of only the first entry}
+	\label{fig:coefRecalc_green}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.30\textwidth}
+	\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
+	\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_interpolated.png}
+	\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
+	\setlength{\abovecaptionskip}{15pt}
+	\caption{Recalculation of the interpolation of curves of both entries}
+	\label{fig:coefRecalc_interpolated}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.30\textwidth}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitRed.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
+	\setlength{\abovecaptionskip}{15pt}
+	\caption{Recalculation of only the second entry}
+	\label{fig:coefRecalc_red}
+	\end{subfigure}
+	\caption{Comparison of coefficient recalculation techniques. Left: first fitted entry; right: second fitted entry; middle: result of recalculation}
+	\label{fig:coefRecalculation}
+\end{figure}
+
+
+If a coefficient recalculation of an atlas lattice point with multiple fits is required, we interpolate the spectra of all of its fits and save the result with 3 coefficients. In terms of the smoothness of color gradients in the cube, this approach is more reliable and stable than if we were to pick only one of its fits and work with it. To support our claim and explain it more thoroughly, we run an experiment comparing these methods.
+
+We seed a cube with two atlas entries with vastly distinct shapes of their reflectance spectra that, however, evaluate to neighboring voxels. This implies that there must exist an atlas lattice point that contains both coefficient representation of the seeded atlas entries. We 
+
+ We pick one of the atlas lattice points that contains the coefficient representation of both of them, we pick a regular lattice points that is its neighbor, and we compare the spectra of its prior coefficients for all of these methods --- if recalculated from the first representation only (see~\cref{fig:coefRecalc_green}), from the second representation only (see~\cref{fig:coefRecalc_red}), and from their interpolation (see~\cref{fig:coefRecalc_interpolated}). For visualization purposes, we also include the colors these curves evaluate to under the FL11 illuminant. We present the results in~\cref{fig:coefRecalculation}.
+
+If all the fits of an atlas lattice point contribute to the prior coefficients, the color difference between the result and the original fits is relatively similar for each fit. If, on the other hand, the point's prior coefficients come from one fit only, the reduced color difference between the point and the original fit comes at a cost of rather significant artifacts between the other entries. 
+
+As we prefer to keep the cube's gradients as smooth as possible, we opt for the interpolation of fits.
+
+Once the starting points are successfully fitted, we can use their coefficients as prior for other lattice points. We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind our fitting algorithm in~\cref{alg:upliftingAlgMoments}.
 
 \begin{algorithm}[t!]
 	\caption{Fitting of the cube from starting points}
@@ -266,16 +315,15 @@ We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where th
 	\end{algorithmic}
 \end{algorithm}
 
+(TOTO neviem ci tam pridat? ci to ukazat)The number of the fitting rounds depends both on the cube dimension and on the kind of atlas that has been used. If we choose not to input an atlas, the fitted cube ``grows'' from the middle, while seeding with an atlas makes the cube ``grow'' from many places, requiring a lot less round.
+
 \subsection{Cube improvement} \label{ssec:cubeImprovement}
 
-\paragraph{Improvement heuristic} \label{par:improvementHeuristics}
+During our implementation of Borgtool, we use the ART 
+
+Due to the shortcomings
 
 To minimize the shortcomings of the optimizer mentioned in~\cref{ceresDeficiency}, we add a heuristic-based improvement of the coefficients, implemented in steps~\ref{algStep:heuristicsStart} through~\ref{algStep:heuristicsEnd}. Its implementation consists of solely slightly changing the first coefficient and running the optimizer again for a pre-defined number of times. We do not implement any other improvement, so as to not cause significant performance decrease. This is because we do not necessarily require the points to be fitted in the given round. Even if the fitting fails, it may still be successful in the following rounds, where the coefficients of newly fitted neighbors might be used as prior. Additionaly, after the cube fitting is done, we still run an ``improvement'' step for the unsuccessful points. We discuss the specifics of this step in~\cref{ssec:cubeImprovement}.
-
-The number of the fitting rounds depends both on the cube dimension and on the kind of atlas that has been used. If we choose not to input an atlas, the fitted cube ``grows'' from the middle, while seeding with an atlas makes the cube ``grow'' from many places, requiring a lot less round. We show the differences in , where we present the 
-
-Obviously, neither option is better in terms of performance, as the number of fitted points must still be the same.
-
 
 In extreme cases, such as when using a very low fitting threshold, the fitting of some points may be unsuccessful even after applying heuristic improvements. Usually, this happens for the outermost points of the cube, i.e. either (1,1,1), (0,0,0), or points with at least one of their coordinates set to either maximum or minimum. We therefore carry out the following improvements in the order as listed and terminate if any of them succeed: 
 \begin{steps}
