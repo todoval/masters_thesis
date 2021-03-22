@@ -194,17 +194,17 @@ We solve such problematic cases by applying a simple heuristic, which consists o
 
 Therefore, we implement another heuristic improvement --- if the coefficient count is higher than 14, we let the optimizer optimize only the first 4 coefficients while leaving the others constant. We use the threshold of $c > 14$ as that is roughly the boundary where the fitted curves begin to show undesired artifacts, and we optimize the first 4 coefficients because their number is both low enough for the optimizer to handle without errors, and high enough so we give the fitting process enough freedom without it having to resort to sinusodial-like shapes.
 
-We summarize the fitting process of the starting points, including the utilization of threshold for our fourth cost function (see~\cref{ssec:costFunctions}), in~\cref{alg:fitting_alp}. If the optimizer is unable to fit an atlas lattice points, we throw a warning and convert it into a regular lattice point. However, as of yet, we have not encountered a failure.
+We summarize the fitting process of the starting points, including the utilization of threshold for our fourth cost function (see~\cref{ssec:costFunctions}), in~\cref{alg:fittingAtlasLatticePoints}. If the optimizer is unable to fit an atlas lattice points, we throw a warning and convert it into a regular lattice point. However, as of yet, we have not encountered a failure.
 
 \begin{algorithm}[t!]
 	\caption{Fitting of one coefficient representation of a $point$ from atlas lattice points}
-	\label{alg:fitting_alp}
+	\label{alg:fittingAtlasLatticePoints}
 	\begin{algorithmic}[1]
 		\State $threshold \gets 0.001$
 		\While {$threshold < 1$}
 		\State $coefsToFit \gets$ either the first 4 coefficients or all of them depending on the coefficient count of $point$
 		\State $i \gets 0$
-		\While optimizer is unsuccessful \textbf{and} $i < maxIterations$
+		\While {optimizer is unsuccessful \textbf{and} $i < maxIterations$}
 		\State heuristically change $coefsToFit[0]$
 		\State run the optimizer with parameters $coefsToFit$ and threshold set to $threshold$
 		\State $i++$
@@ -224,59 +224,54 @@ As the atlas lattice points are represented with a higher number of coefficients
 
 We refer to the conversion process as \emph{coefficient recalculation}. It consists of reconstructing the reflectance spectrum of the atlas lattice point and subsequently saving it with 3 coefficients. Although this process causes significant loss of spectral information, it preserves the rough outline of the curve. This works to our benefit --- it reduces the likelihood of significant color artifacts between the atlas lattice points and regular lattice points while keeping the spectra smooth.
 
-
 \begin{figure}[t!]
 	\centering
 	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
 	\includegraphics[width=0.8\linewidth]{img/recalculation.png}
-	\caption{Comparison of coefficient recalculation techniques. Left: first fitted entry; right: second fitted entry; middle: result of recalculation}
-	\label{fig:test}
+	\caption{An illustrative demonstration of the coefficient recalculation experiment}
+	\label{fig:recalculation_process}
 \end{figure}
 
-\begin{figure}[t!]
-	\centering
-	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
-	\captionsetup[subfigure]{justification=centering}
-	\begin{subfigure}[t]{0.30\textwidth}
-		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
-		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitGreen.png}
-		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
-	\setlength{\abovecaptionskip}{15pt}
-	\caption{Recalculation of only the first entry}
-	\label{fig:coefRecalc_green}
-	\end{subfigure}
-	\begin{subfigure}[t]{0.30\textwidth}
-	\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
-	\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_interpolated.png}
-	\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
-	\setlength{\abovecaptionskip}{15pt}
-	\caption{Recalculation of the interpolation of curves of both entries}
-	\label{fig:coefRecalc_interpolated}
-	\end{subfigure}
-	\begin{subfigure}[t]{0.30\textwidth}
-		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
-		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitRed.png}
-		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
-	\setlength{\abovecaptionskip}{15pt}
-	\caption{Recalculation of only the second entry}
-	\label{fig:coefRecalc_red}
-	\end{subfigure}
-	\caption{Comparison of coefficient recalculation techniques. Left: first fitted entry; right: second fitted entry; middle: result of recalculation}
-	\label{fig:coefRecalculation}
-\end{figure}
+If a coefficient recalculation of an atlas lattice point with multiple fits is required, we interpolate the spectra of all of its fits and save the result with 3 coefficients. In terms of the smoothness of color gradients in the cube, this approach is more reliable and stable than if we were to pick only one of its fits and work with it. To support our claim and explain it more thoroughly, we run the following experiment comparing these methods (illustrated in~\cref{fig:recalculation_process}):
 
+We seed a cube with two atlas entries, $A$ and $B$, that have vastly distinct shapes of their reflectance spectra but evaluate to neighboring voxels. This implies that there must exist an atlas lattice point $x$ that contains both coefficient representation of the seeded atlas entries. We pick a regular lattice point $y$ from the neighborhood of $x$ and we compute its prior coefficients with the following three methods --- we recalculate them from the representation of $A$ saved in $x$ only, from the representation of $B$ saved in $x$ only, and from their interpolation. We then compare the resulting curves. For visualization purposes, we also include the colors these curves, along with the curves of $A$ and $B$, evaluate to under the FL11 illuminant. Additionally, we present the comparison of the color gradients created by respectively using these recalculation techniques in~\cref{fig:recalculation_colorGradients}.
 
-If a coefficient recalculation of an atlas lattice point with multiple fits is required, we interpolate the spectra of all of its fits and save the result with 3 coefficients. In terms of the smoothness of color gradients in the cube, this approach is more reliable and stable than if we were to pick only one of its fits and work with it. To support our claim and explain it more thoroughly, we run an experiment comparing these methods.
+Note that the spectrum (and, subsequently, color) that the $A$ and $B$ entries evaluate to is not the original spectrum of the atlas entries, but the spectrum that the coefficient representations saved at the atlas lattice point $x$ evaluate to.
 
-We seed a cube with two atlas entries with vastly distinct shapes of their reflectance spectra that, however, evaluate to neighboring voxels. This implies that there must exist an atlas lattice point that contains both coefficient representation of the seeded atlas entries. We 
-
- We pick one of the atlas lattice points that contains the coefficient representation of both of them, we pick a regular lattice points that is its neighbor, and we compare the spectra of its prior coefficients for all of these methods --- if recalculated from the first representation only (see~\cref{fig:coefRecalc_green}), from the second representation only (see~\cref{fig:coefRecalc_red}), and from their interpolation (see~\cref{fig:coefRecalc_interpolated}). For visualization purposes, we also include the colors these curves evaluate to under the FL11 illuminant. We present the results in~\cref{fig:coefRecalculation}.
-
+ \begin{figure}[t!]
+ 	\centering
+ 	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
+ 	\captionsetup[subfigure]{justification=centering}
+ 	\begin{subfigure}[t]{0.30\textwidth}
+ 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
+ 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitGreen.png}
+ 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
+ 		\caption{Recalculation of the coefficient representation of $A$ only}
+ 		\label{fig:recalculation_colorGradients_green}
+ 	\end{subfigure}
+ 	\begin{subfigure}[t]{0.30\textwidth}
+ 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
+ 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_interpolated.png}
+ 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
+ 		\caption{Recalculation of the interpolation between\\ $A$ and $B$}
+ 		\label{fig:recalculation_colorGradients_interpolated}
+ 	\end{subfigure}
+ 	\begin{subfigure}[t]{0.30\textwidth}
+ 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
+ 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitRed.png}
+ 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
+ 		\caption{Recalculation of the coefficient representation of $B$ only}
+ 		\label{fig:recalculation_colorGradients_red}
+ 	\end{subfigure}
+ 	\caption{Color gradients resulting from our experiment in~\cref{fig:recalculation_process}. For each figure, the upper and the lower patch stand for the colors of coefficient representations of $A$ and $B$ respectively, while the middle patch stands for the color of the current recalculation technique.}
+ 	\label{fig:recalculation_colorGradients}
+ \end{figure}
+ 
 If all the fits of an atlas lattice point contribute to the prior coefficients, the color difference between the result and the original fits is relatively similar for each fit. If, on the other hand, the point's prior coefficients come from one fit only, the reduced color difference between the point and the original fit comes at a cost of rather significant artifacts between the other entries. 
 
 As we prefer to keep the cube's gradients as smooth as possible, we opt for the interpolation of fits.
 
-Once the starting points are successfully fitted, we can use their coefficients as prior for other lattice points. We proceed similarly to the approach in~\cref{alg:upliftingAlgSigmoid}, where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind our fitting algorithm in~\cref{alg:upliftingAlgMoments}.
+Other than the coefficient recalculation, our fitting process is carried out in a manner similar to that of the sigmoid fitting (see~\cref{alg:upliftingAlgSigmoid}), where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind the fitting algorithm used in our implementation in~\cref{alg:upliftingAlgMoments}. Note that each round of the fitting is multithreaded, which substantially increases the time performance.
 
 \begin{algorithm}[t!]
 	\caption{Fitting of the cube from starting points}
@@ -319,76 +314,48 @@ Once the starting points are successfully fitted, we can use their coefficients 
 
 \subsection{Cube improvement} \label{ssec:cubeImprovement}
 
-During our implementation of Borgtool, we use the ART 
+In extreme cases, such as when using a low fitting threshold or a sparsely-sampled atlas, the fitting of some points may be unsuccessful. We assign most of these failures to the shortcomings of ART, since its functions are employed in the Borgtool for color conversion purposes.
 
-Due to the shortcomings
+Specifically, the conversion of an equal energy reflectance spectrum to RGB under the D65 illuminant does not produce the expected $RGB = (255, 255, 255)$, but rather an RGB of $(254.95, 255.005, 255.0003)$ for a 1nm sample increment, and, even worse $(254.88, 255.07, 254.93)$ for a 10nm increment. To force ART to reproduce an RGB of $(255, 255, 255)$, a spectrum with slightly lower values in its middle is required. Therefore, although the coefficient set $c = {1, 0, 0}$ represents the equal energy spectrum, it does not suffice for the optimizer.
 
-To minimize the shortcomings of the optimizer mentioned in~\cref{ceresDeficiency}, we add a heuristic-based improvement of the coefficients, implemented in steps~\ref{algStep:heuristicsStart} through~\ref{algStep:heuristicsEnd}. Its implementation consists of solely slightly changing the first coefficient and running the optimizer again for a pre-defined number of times. We do not implement any other improvement, so as to not cause significant performance decrease. This is because we do not necessarily require the points to be fitted in the given round. Even if the fitting fails, it may still be successful in the following rounds, where the coefficients of newly fitted neighbors might be used as prior. Additionaly, after the cube fitting is done, we still run an ``improvement'' step for the unsuccessful points. We discuss the specifics of this step in~\cref{ssec:cubeImprovement}.
+Unfortunately, 3 trigonometric coefficients are not capable of representing such spectrum without slight error. This becomes even more visible if the amount of samples used for the internal representation of spectra is low, as it gives less freedom to the optimizer. Furthermore, this problem may also arise for target RGB values extremely close to $(255, 255, 255)$, which is mainly the case in higher-resolution cubes.
 
-In extreme cases, such as when using a very low fitting threshold, the fitting of some points may be unsuccessful even after applying heuristic improvements. Usually, this happens for the outermost points of the cube, i.e. either (1,1,1), (0,0,0), or points with at least one of their coordinates set to either maximum or minimum. We therefore carry out the following improvements in the order as listed and terminate if any of them succeed: 
-\begin{steps}
-	\item utilize the same improvement method as mentioned in~\cref{par:improvementHeuristics}, but increase the number of iterations \label{step:improvement1}
-	\item proceed in the same manner as in the previous step, but slightly alter all the coefficients instead of only the first \label{step:improvement2}
-	\item pass the current best coefficients to the optimizer and keep improving until the optimizer is no longer able to
-	\item if the point's distance to the (1,1,1) point in the cube is lower than it is to the (0,0,0) point, try setting the coefficients to $\{1, 0, 0, 0, \ldots\}$, as these are the coefficients for a constant curve obtaining the value 1 at every wavelength. Apply both~\ref{step:improvement1} and~\ref{step:improvement2} to these coefficients.\label{step:improvement4}
-	\item if, on the other hand, the point is closer to the (0,0,0) point, use the $\{0, 0, 0 ,\ldots\}$ coefficients as prior and proceed as in~\ref{step:improvement4}
-\end{steps}
+To give a specific example, the optimizer fails for the target RGB of $(255, 255, 255)$ if the cube is seeded with Munsell Book of Colours (as the internal representation then consists of only 36 samples with 10nm increment), for the target RGB of $(255, 255, 255)$ if fitting from the middle with the fitting threshold being $1000$times lower than its default value (i.e. we change it from being $1/100$ of a voxel to $1/100000$ of a voxel), and other, similarly extreme combinations of low threshold and sparsely-sampled atlases.
 
-We call this process \emph{cube improvement}. We once again emphasize that it is aimed only at the most extreme cases. As a matter of fact, there is a rather low chance of triggering it at all, and, even if it is triggered, the number of failed points to be improved is usually only one or two. Therefore, we do not concern ourselves with the performance of this process, as its runtime is negligible in comparison to the cube fitting.
-
-We present the exact statistics on cube improvement in ref.
-
-The issue that could arise with this process is that of the following interpolation. By using
-
-The more important issue is the shape of the resulting curve. Using seemingly ``random'' coefficients as prior suggests the resulting curve's shape to be unlike those of its neighbors, which may result in metameric artifacts.
-
-The reason behind using improvement heuristics both during and after fitting is both for improved time performance, i.e. a simple change of coefficients is less time-consuming that the process t
-
-multithreaded 
-
-We support from 2-8 moments then, however, we will talk about the number of coefficients (although user inserts moments). From now on we talk about coefficients. We do not support 1 or 2 coefs as they only create rovne ciary which does not reconstruct the color we want.
+To minimize the created errors, we add a heuristic-based improvement of the coefficients, which sets their values to ones we assume are closest to the optimum and then proceeds similarly to the coefficient improvement of atlas lattice entries in~\cref{alg:fittingAtlasLatticePoints}. For a pre-defined amount of times, it slightly changes up the coefficients and runs the optimizer again, terminating if successful. However, neither this, nor any other heuristic-based improvement approach we attempted to implement, were capable of eliminating failures. Their only asset was a slightly lowered fitting threshold in some of the cases.
 
 \subsection{Cube storage}
 	
-Once the cube is completely fitted, its contents are written to a binary file. As we want the resulting file to be as small as possible, we save only the information crucial for the purposes of rendering. Following, we provide a list of contents of a cube file:
+Once the cube is fitted, its contents are written to a binary file. As we want the resulting file to be as small as possible, we save only the information crucial for the purposes of rendering. Following, we provide a list of contents of a cube file:
 \begin{itemize}
 	\item \emph{version}
-	\item \emph{features}, i.e. whether the cube contains debug information
-	\item \emph{moment flag} --- a flag signifying that the cube is based on trigonometric moments. We extend the sigmoid cube structure with a sigmoid flag for an easier cube recognition in rendering software.
+	\item \emph{moment flag} --- a flag signifying that the cube is based on trigonometric moments. Similarly, we extend the sigmoid cube structure with a sigmoid flag for an easier cube recognition in a rendering software.
 	\item \emph{dimension}
-	\item \emph{illuminant} under which the cube has been fitted
+	\item \emph{illuminant} under which the cube was fitted
 	\item \emph{fitting threshold}
+	\item \emph{wavelength range}, i.e. the internal representation of spectrum that was used during fitting
 	\item for every point, we store:
 	\begin{itemize}
-		\item \emph{coefficient count}, which gives us information on whether the point is an atlas lattice point or a regular point
-		\item \emph{coefficients}
+		\item \emph{coefficient representations}, along with their \emph{entry IDs} and their \emph{sizes}
 		\item \emph{lattice RGB}
-		\item \emph{fitting distance}, i.e. the distance between lattice and target RGB, should be below fitting threshold
-		\item in case the debug information is included, the entry also contains:
-		\begin{itemize}
-			\item \emph{target RGB}
-			\item \emph{treated variable}, i.e. in which round was the point fitted. If the variable is equal to $-1$, it means the fitting has failed for this point.
-		\end{itemize}
+		\item \emph{fitting distance}, i.e. the distance between lattice and target RGB
 	\end{itemize}
 \end{itemize}
 
-If we were to use such a cube for the purposes of rendering, the knowledge of both the entry's treated paramter and its target RGB is unnecessary. The only benefit the treated parameter provides is the capability to issue a warning in case the cube is incomplete. This can, however, also be achieved by spectral reconstruction from the coefficients and the comparison of its RGB to that of the entry's lattice point.
+Note that storing the target RGB of lattice points is unnecessary, as it can computed from the cube's dimension parameter. Although we could similarly compute the lattice RGB from the coefficient representations, we decide to store it in order for the moment cube structure to remain compatible with the sigmoid cube structure.
 
-Storing the target RGB variable also provides no irreplaceable advantages. The target RGB of all the lattice points can simply be computed from the cube's dimension parameter, rendering such variables useless.
-
-In addition to the storing of the cube, we also provide a function capable of loading such a cube and initializing its parameters. Borgtool utilizes this function in case the user wants to create a texture from an already existing cube or simply wants to check the correctness of the existing cube's parameters. The code of this function is also used during the integration in a rendering software.
+In addition to storing the cube, we extend Borgtool with the functionality to load such a cube and utilize it for either the purposes of texture uplifting (specifically, uplifting of the texture in~\cref{fig:sigUpliftOriginal}) or for its 3D visualization.
 
 \section{ART integration}
 
-The user can choose the size of the cube etc. Borgtool has the following options, and we implement all of them for our method (except for something)
-The borgtool already has the sigmoid method implemented as in algorithm daco
-Uses three coefficients, fits from middle, and therefore results are metameric (show picture)
-We implement the trigonometric moment method by changing up the code provided by peters
-We aim for allowing the user to add a color atlas, however we also provide an option when the user fits from the middle
-When fitted from middle, the optimizer works very similarly to the sigmoid method (show pictures)
+In order to demonstrate the proper utilization and, subsequently, the performance of the trigonometric moment cube, we integrate it into an existing renderer --- ART. As ART already has the support for uplifting with the sigmoid cube, we solely extend both its cube structure and uplifting capabilities in a similar manner as in the Borgtool. For the scene description files, we add an option for specifying the cube file to be used for uplifting --- due to our extension in terms of the \emph{flag} parameter, we are capable of recognizing the type of the cube without it being manually specified by the user.
 
-Also explain the threshold value - it is really important to set it properly and that it affects performance.
+For the purposes of rendering, ART uses hero wavelength sampling ref, which yields four wavelengths for each path tracing iteration. The uplifting process then outputs four samples of the reflectance spectrum corresponding to the input RGB color for the specified wavelengths.
 
-This is because such an error evidently points out the insufficient cube size for the given atlas, either due to the atlas's large size or due to its concentration around certain colors (e.g. the Page 14 from the Munsell Book of Colors as in ukazka).
+The uplifting process itself must be, as already concluded in this thesis, based on the weighted interpolation of spectra at the corners of the voxel that the desired RGB falls into. Therefore, we proceed as following:
 
- as the interpolation of multiple spiky, non-similar spectra often results in a similarly uneven spectrum susceptible to metameric artifacts. Mention here that we NEED to have smooth spectra and that it is very important for interpolation. We therefore set parameters so that this is possible as this is the key. 
+Firstly, from the notion of the desired RGB, we obtain the 8 voxel corners along with their distances to the RGB triplet. These will later be used as weights. We then examine the sets of entry IDs at the voxel corners and find their intersection $S$.
+
+If $S$ is not empty, it must contain precisely one ID, and that is the ID of the atlas entry with which the voxel was originally seeded. To therefore reconstruct this atlas entry, we use only the coefficient representations corresponding to the common ID for spectral reconstruction of each voxel corner. We then carry out a weighted trilinear interpolation of the reconstructed curves, which results in the final, uplifted spectrum.
+
+If, on the other hand, $S$ is empty, we obtain the spectra for the trinilear interpolation process by interpolating the spectra of all coefficient representations for each of the 8 points. The reason behind this is the same as for the coefficient recalculation (see~\cref{ssec:cubeImprovement}), and that is the decrease of extreme errors in color gradients in the cube.
