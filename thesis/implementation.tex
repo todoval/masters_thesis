@@ -4,11 +4,11 @@ We approach the problem of spectral uplifting similarly to~\citet{upsamplingJako
 
 For the first part, we extend an already existing uplifting tool, the \emph{Borgtool}, which is currently used for creating sigmoid-based RGB cubes in the same manner as in~\cref{alg:upliftingAlgSigmoid}. We add the possibility for creating trigonometric moment-based cubes (from now on referred to as \emph{trigonometric moment cube}), i.e. for the spectra to be stored with trigonometric moments rather than sigmoid coefficients. We also add an option for constraining such a cube with a user-specified atlas.
 
-We then show the performance of such a model by integrating it in ART, which, up until now, used only one built-in sigmoid-based cube for all its uplifting processes.
+We then show the performance of such a model by integrating it into ART, which, up until now (version 2.0.3), used only one built-in sigmoid-based cube for all its uplifting processes.
 
 \section{Uplifting model}
 
-The core of this section is the already mentioned Borgtool. It is a stand-alone, non-open source thing that was created by Weta and is .
+The core of this section is the already mentioned Borgtool. It is a stand-alone, research software capable of creating sigmoid-based RGB cubes. It was originally developed by collaboration of Charles University and Weta Digital and, later, when the Borgtool was also extended with the capabilities of fluorescent uplifting as presented in~\cite{upsamplingFluorescence}, Karlsruhe Institute of Technology.
 
 The output of the Borgtool is an RGB cube structure which contains multiple entries in form of lattice points. Following, we name the main parameters of a single cube entry of the already supported sigmoid-based cube:
 \begin{itemize}
@@ -24,7 +24,7 @@ Our requirements for the shape of the spectra at atlas lattice points differ fro
 
 Therefore, it is sufficient for the regular lattice points to be represented with a smaller number of coefficients, while atlas lattice points might require a lot more. Although a smooth spectrum can be represented with a high number of coefficients, such a representation is memory inefficient, its reconstruction is more time consuming, and, most importantly, it does not work well with the optimizer. Based on our experiments in~\cref{ssec:noOfMoments}, we decide to store the spectra of regular lattice points with 3 coefficients and adjust the number of coefficients of the atlas lattice points depending on the nature of its desired spectrum.
 
-In addition to supporting variable number of coefficients (ranging from 3 to 24), the trigonometric moment cube also supports the possibility of a multiple coefficient representations per lattice point. The sole purpose of such extension is to lower the cube size requirements upon constraining, which we address more thoroughly in ref.
+In addition to supporting variable number of coefficients (ranging from 3 to 21), the trigonometric moment cube also supports the possibility of a multiple coefficient representations per lattice point. The sole purpose of such extension is to lower the cube size requirements upon constraining, which we address more thoroughly in ref.
 
 In addition to the cube structure, the uplifting process of the trigonometric moment cube is also similar to the one of the sigmoid cube, which closely follows~\cref{alg:upliftingAlgSigmoid}. Its main distinctions are in the constraining process (which the sigmoid cube lacks) and in the first round of optimizing, or, as we refer to from now on, \emph{fitting}.
 
@@ -89,7 +89,7 @@ Moreover, the spectral data obtained from the atlases cannot be stored in the Bo
 
 We store the spectral curves of the individual atlas entries with Fourier coefficients as described in~\cref{par:spectrumToCoefficientConversion}. We mirror but do not warp the signal prior to coefficient computation (see~\cref{sec:storingMoments}).
 
-The number of coefficients per atlas entry is variable, ranging from 4 to 24. We explain our method for determining the sufficiency of coefficient representation, and therefore the coefficient count for each atlas entry, in~\cref{ssec:noOfMoments}.
+The number of coefficients per atlas entry is variable, ranging from 4 to 21. We explain our method for determining the sufficiency of coefficient representation, and therefore the coefficient count for each atlas entry, in~\cref{ssec:noOfMoments}.
 
 \subsection{Cube seeding} 
 
@@ -310,8 +310,6 @@ Other than the coefficient recalculation, our fitting process is carried out in 
 	\end{algorithmic}
 \end{algorithm}
 
-(TOTO neviem ci tam pridat? ci to ukazat)The number of the fitting rounds depends both on the cube dimension and on the kind of atlas that has been used. If we choose not to input an atlas, the fitted cube ``grows'' from the middle, while seeding with an atlas makes the cube ``grow'' from many places, requiring a lot less round.
-
 \subsection{Cube improvement} \label{ssec:cubeImprovement}
 
 In extreme cases, such as when using a low fitting threshold or a sparsely-sampled atlas, the fitting of some points may be unsuccessful. We assign most of these failures to the shortcomings of ART, since its functions are employed in the Borgtool for color conversion purposes.
@@ -350,7 +348,7 @@ In addition to storing the cube, we extend Borgtool with the functionality to lo
 
 In order to demonstrate the proper utilization and, subsequently, the performance of the trigonometric moment cube, we integrate it into an existing renderer --- ART. As ART already has the support for uplifting with the sigmoid cube, we solely extend both its cube structure and uplifting capabilities in a similar manner as in the Borgtool. For the scene description files, we add an option for specifying the cube file to be used for uplifting --- due to our extension in terms of the \emph{flag} parameter, we are capable of recognizing the type of the cube without it being manually specified by the user.
 
-For the purposes of rendering, ART uses hero wavelength sampling ref, which yields four wavelengths for each path tracing iteration. The uplifting process then outputs four samples of the reflectance spectrum corresponding to the input RGB color for the specified wavelengths.
+For the purposes of rendering, ART uses hero wavelength sampling~\cite{heroWavelengthSampling}, which yields four wavelengths for each path tracing iteration. The uplifting process then outputs four samples of the reflectance spectrum corresponding to the input RGB color for the specified wavelengths.
 
 The uplifting process itself must be, as already concluded in this thesis, based on the weighted interpolation of spectra at the corners of the voxel that the desired RGB falls into. Therefore, we proceed as following:
 
