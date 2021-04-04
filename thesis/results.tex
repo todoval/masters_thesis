@@ -1,16 +1,21 @@
 \chapter{Results} \label{chap:results}
 
-In this chapter, we analyze the performance of our method for constrained spectral uplifting. We start by focusing on the effects of various implementation details on the results and justifying our decisions regarding their selection. Afterward, we present the actual results of the constrained uplifting process, and compare its performance to the sigmoid-based uplifting.
+In this chapter, we analyze the accuracy of our method for constrained spectral uplifting. We start by focusing on the effects of various implementation details on the results and justifying our decisions regarding their selection. Afterward(?), we present the actual results of the constrained uplifting process, and compare its accuracy to the sigmoid-based uplifting.
 
-We conclude this chapter by summing up the main drawbacks, and proposing improvements for further work.
+We conclude this chapter by summing up the main drawbacks, and proposing improvements for future work.
 
-\section{Implementation parameters}
+\section{Implementation choices}
 
-The structure of the trigonometric moment cube resulting from the implemented Borgtool's extension greatly depends on the choice of techniques and parameter values used during the implementation. To be specific, the core elements affecting the performance include the signal mapping technique used for spectral representation with moments, the number of moments with which to store spectra, and the utilization of the optimizer, specifically its definition of residual blocks.
+The structure of the trigonometric moment cube resulting from the implemented Borgtool's extension greatly depends on the choice of techniques and parameter values used during the implementation. To be specific, the core elements affecting the accuracy include:
+\begin{itemize}
+	\item the signal mapping technique used for spectral representation with trigonometric moments
+	\item the number of trigonometric moments with which to store spectra
+	\item the utilization of the optimizer, specifically its definition of residual blocks
+\end{itemize}
 
-This sections overviews our decision-making process regarding these issues, and presents results achieved with other methods so as to support our claim.
+This sections overviews our decision-making process regarding these issues, and presents results achieved with other methods to support our claim.
 
-\subsection{Storing moments} \label{sec:storingMoments}
+\subsection{Signal mapping techniques} \label{sec:storingMoments}
 
 The first thing we analyze and decide on is the technique used for mapping wavelengths to a signal for the storage and subsequent reconstruction of moments. As already mentioned in~\cref{par:spectrumToCoefficientConversion}, we have the choice of both \emph{mirroring} and \emph{warping} the signal, which overall creates four options --- using only mirroring, using only warping, using both or using neither, i.e. utilizing the original signal.
 
@@ -338,7 +343,7 @@ However, as the runtime is not the focus of this thesis and as the resulting sha
 
 When fitting other spectral data, the optimizer does not behave as drastically as shown in~\cref{fig:resultsCostFunctions}. On the contrary, many fitted altas entries (such as the ``blue flower'' of the Macbeth Color Checker) resemble their input quite well. However, we must focus on the worst-case scenario as we do not wish to experience any metameric artifacts, not even in one color.
 
-\section{Rendering}
+\section{Resulting images}
 
 In this section, we present the actual results achieved with our process. The way we do it is that
 we spectrally render an image using a set of spectra (we denote this image the original image), use this spectra as seeds for the cube, we create the cube and then use this cube for uplifting the original rendered image. 
@@ -346,7 +351,6 @@ we spectrally render an image using a set of spectra (we denote this image the o
 The ideal way to do this
 
 heuristics performance, overall runtime of the cube
-
 
 
 \begin{figure}[t]
@@ -385,26 +389,26 @@ heuristics performance, overall runtime of the cube
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_sigmoidFL11.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_diff_sigmoidFL11.png}
 			&\quad
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_originalFL11.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_sigmoidFL11.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_diff_sigmoidFL11.png}
 			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_originalFL11.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_ourFL11.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_diff_ourFL11.png}
 			&\quad
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_originalFL11.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_ourFL11.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}\\
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_diff_ourFL11.png}\\
 			& & Page 9 & & & Page 10 & \\
 			\vspace{0.1em} \\ 
 			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
@@ -412,26 +416,26 @@ heuristics performance, overall runtime of the cube
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_sigmoidFL11.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_diff_sigmoidFL11.png}
 			&\quad
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_originalFL11.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_sigmoidFL11.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_diff_sigmoidFL11.png}
 			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_originalFL11.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_ourFL11.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_diff_ourFL11.png}
 			&\quad
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_originalFL11.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_ourFL11.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}\\
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_diff_ourFL11.png}\\
 			& & Page 11 & & & Page 12 & \\
 			\vspace{0.1em} \\ 
 			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
@@ -439,26 +443,26 @@ heuristics performance, overall runtime of the cube
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_sigmoidFL11.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_diff_sigmoidFL11.png}
 			&\quad
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_originalFL11.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_sigmoidFL11.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_diff_sigmoidFL11.png}
 			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_originalFL11.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_ourFL11.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_diff_ourFL11.png}
 			&\quad
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_originalFL11.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_ourFL11.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}\\
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_diff_ourFL11.png}\\
 			& & Page 13 & & & Page 14 & \\
 		\end{tabular}
 	}
@@ -482,53 +486,53 @@ heuristics performance, overall runtime of the cube
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_sigmoidFL3.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_diff_sigmoidFL3.png}
 			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_originalFL11.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_originalD65.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_sigmoidFL11.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_sigmoidD65.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_diff_sigmoidD65.png}
 			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_originalFL3.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_ourFL3.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_diff_ourFL3.png}
 			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_originalFL11.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_originalD65.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_ourFL11.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_ourD65.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}\\
-			& & Page 4; FL 3 & & & Page 24; D65 & \\
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_diff_ourD65.png}\\
+			& & Page 4; FL 3 & & & Page 18; D65 & \\
 			\vspace{0.1em} \\ 
 			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
-			&\includegraphics[width=.155\linewidth]{img/results_uplift_page11_originalFL11.png}
+			&\includegraphics[width=.155\linewidth]{img/results_uplift_page29_originalFL7.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_sigmoidFL11.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_sigmoidFL7.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_diff_sigmoidFL7.png}
 			&\quad
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_originalD50.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_sigmoidD50.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_diff_sigmoidD50.png}
 			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
 			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_originalFL11.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_originalFL7.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_ourFL11.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_ourFL7.png}
 			& 
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_diff_ourFL7.png}
 			&\quad
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_originalD50.png}
 			&
 			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_ourD50.png}
 			&
-			\includegraphics[width=.155\linewidth]{img/toDelete.png}\\
+			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_diff_ourD50.png}\\
 			& & Page 29, FL 7 & & & Page 35, D50 & \\
 		\end{tabular}
 	}
@@ -538,5 +542,6 @@ heuristics performance, overall runtime of the cube
 
 - which technique gives the best results (metamerism results)
 
+\section{Future work}
 
 Also mention that it is multi-threaded and performance is not really a priority - the cube has to be created only once and then can be reused as much as the artists need.

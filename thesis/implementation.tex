@@ -2,15 +2,15 @@
 
 We approach the problem of spectral uplifting similarly to~\citet{upsamplingJakobHanika}, where an uplifting model is created prior to rendering. Our implementation therefore consists of two parts --- \emph{model creation} and its subsequent \emph{utilization} in a rendering software. 
 
-For the first part, we extend an already existing uplifting tool, the \emph{Borgtool}, which is currently used for creating sigmoid-based RGB cubes in the same manner as in~\cref{alg:upliftingAlgSigmoid}. We add the possibility for creating trigonometric moment-based cubes (from now on referred to as \emph{trigonometric moment cube}), i.e. for the spectra to be stored with trigonometric moments rather than sigmoid coefficients. We also add an option for constraining such a cube with a user-specified atlas.
+For the first part, we extend an already existing uplifting tool, Borgtool, which is currently used for creating sigmoid-based RGB cubes in the same manner as in~\cref{alg:upliftingAlgSigmoid}. We add the possibility for creating trigonometric moment-based cubes (from now on referred to as \emph{trigonometric moment cube}), i.e. for the spectra to be stored with trigonometric moments rather than sigmoid coefficients. We also add an option for constraining such a cube with a user-specified atlas.
 
-We then show the performance of such a model by integrating it into ART, which, up until now (version 2.0.3), used only one built-in sigmoid-based cube for all its uplifting processes.
+We then show the accuracy of such a model by integrating it into ART, which, up until now (version 2.0.3), used only one built-in sigmoid-based cube for all its uplifting processes.
 
 \section{Uplifting model}
 
-The core of this section is the already mentioned Borgtool. It is a stand-alone, research software capable of creating sigmoid-based RGB cubes. It was originally developed by collaboration of Charles University and Weta Digital and, later, when the Borgtool was also extended with the capabilities of fluorescent uplifting as presented in~\cite{upsamplingFluorescence}, Karlsruhe Institute of Technology.
+As we base most of our implementation on the already existing sigmoid-based cube, we start this section with its detailed description. Specifically, we focus on its structure.
 
-The output of the Borgtool is an RGB cube structure which contains multiple entries in form of lattice points. Following, we name the main parameters of a single cube entry of the already supported sigmoid-based cube:
+The RGB cube structure contains multiple entries in form of uniformly placed lattice points. Following, we name the main parameters of a single cube entry:
 \begin{itemize}
 	\item \emph{target RGB} --- the RGB coordinates that the point has in the cube
 	\item \emph{coefficients} --- 3 sigmoid coefficients used to reconstruct a spectrum so it matches the target RGB
