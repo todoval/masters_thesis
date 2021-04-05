@@ -16,16 +16,16 @@ The structure of the trigonometric moment cube resulting from the implemented Bo
 This sections overviews our decision-making process regarding these issues, and presents results achieved with other methods to support our claim.
 
 \subsection{Signal mapping techniques} \label{sec:storingMoments}
+outperformed the previous one
+The first thing we analyze and decide on is the technique used for mapping wavelengths to a signal for the storage and subsequent reconstruction of moments. As already mentioned in~\cref{par:spectrumToCoefficientConversion}, we have the choice of both mirroring and warping the signal, which overall creates four options --- using only mirroring, using only warping, using both or using neither, i.e. utilizing the original signal.
 
-The first thing we analyze and decide on is the technique used for mapping wavelengths to a signal for the storage and subsequent reconstruction of moments. As already mentioned in~\cref{par:spectrumToCoefficientConversion}, we have the choice of both \emph{mirroring} and \emph{warping} the signal, which overall creates four options --- using only mirroring, using only warping, using both or using neither, i.e. utilizing the original signal.
+Note that our requirements for the resulting spectral shapes differ depending on the type of the lattice point. For the atlas lattice points, we aim for the highest possible precision in terms of curve reconstruction, so as to lose as little information about the original atlas entry as possible. Regular lattice points, however, do not have a prior atlas entry that their spectra must approximate. Therefore, in order to prevent color artifacts upon interpolation, we mainly aim for their smoothness.
 
-Note that our requirements for the resulting spectral shapes differ depending on the type of the lattice point. For the atlas lattice points, we aim for the highest possible precision in terms of curve reconstruction, so as to lose as little information about the original atlas entry as possible. Regular lattice points, however, do not have a prior atlas entry that their spectra must approximate. Therefore, we mainly aim for their smoothness in order to prevent color artifacts upon interpolation.
+In addition to the reconstructed shape, we must also take the behavior of the optimizer (i.e. how well it improves upon its prior coefficients under the given signal mapping technique) into account.
 
-In addition to the reconstructed shape, we must also take the performance of the optimizer (i.e. how well it improves upon its prior coefficients under the given signal mapping technique) into account.
+We start by focusing on the accuracy of the reconstruction of atlas lattice points. We run an experiment across multiple color atlases (specifically the Pantone Color System, Munsell Book of Colours and the Macbeth Colour Checker SG) and multiple CIE illuminants in which we compare the average and maximum round-trip errors of spectra under illuminants for all four techniques. Due to its continuous nature, we use the Delta E as the error measure.
 
-We start by focusing on the accuracy of reconstruction for the atlas lattice points. We run an experiment across multiple color atlases (specifically the Pantone Color System, Munsell Book of Colours and the Macbeth Colour Checker SG) and multiple CIE illuminants in which we compare the average and maximum round-trip errors (in the form of the Delta E error, due to its continuous nature) for all four techniques.
-
-In~\cref{sec:completeMomentError}, we provide all results obtained from these experiments. Note that using $n$ moments requires storing $n+1$ values in case mirroring is used (i.e. the moments are real) and $2n+1$ values otherwise (i.e. the moments are complex). As, from the implementation point of view, we are interested in the number of $coefficients$ needed for storage (i.e. the number of $double$ values per lattice point) rather than the number of moments, we surmise the contents of~\cref{sec:completeMomentError} in~\cref{table:comparisonMomentTechnique}, where we present the errors according to the number of coefficients.
+In~\cref{sec:completeMomentError}, we provide all results obtained from these experiments. Note that using $n$ moments requires storing $n+1$ values in case mirroring is used (i.e. the moments are real) and $2n+1$ values otherwise (i.e. the moments are complex). As, from the implementation point of view, we are interested in the number of $coefficients$ needed for storage (i.e. the number of $double$ values per lattice point) rather than the number of moments, we surmise the contents of~\cref{sec:completeMomentError} in~\cref{table:comparisonMomentTechnique}, where we present the obtained errors according to the number of coefficients.
 
 \begin{table}[t]
 	\centering
@@ -67,13 +67,13 @@ In~\cref{sec:completeMomentError}, we provide all results obtained from these ex
 	\label{table:comparisonMomentTechnique}
 \end{table}
 
-By observing~\cref{table:comparisonMomentTechnique}, we conclude that it is beneficial to mirror the signal. Although the non-mirroring technique performs slightly better for $c \le 9$, we often come across more complicated spectra where $c \le 9$ is insufficient.
+By observing~\cref{table:comparisonMomentTechnique}, we conclude that it is beneficial to mirror the signal. Although the non-mirroring technique performs slightly better for $c \le 9$, the input atlases often contain more complex spectra, where $c \le 9$ is insufficient. Additionally, the optimizer behaves similarly for both techniques, and therefore does not need to be accounted for.
 
-By applying the same principle when choosing whether to warp the signal, we assume that warping should provide better results. However, as the results from~\cref{table:comparisonMomentTechnique} are not entirely clear on this matter (as for $c \ge 12$, the maximum error of non-warping is lower), we put this theory to practice and test the performance of the optimizer with both warping and non-warping. 
+By applying the same principle when choosing whether to warp the signal, we assume that warping should provide better results. We put this theory to practice and test the performance of the optimizer on the chosen technique. Specifically, our test includes storing atlas entries with a ``sufficient'' number of coefficients (sufficiency of a representation is determined by the round-trip Delta E error under FL11 illuminant as in~\cref{ssec:noOfMoments}) and using these coefficients as prior for the fitting of closest lattice points. The original and fitted curves are then compared.
 
-To achieve a certain color error during round-trip, the warping technique usually requires less coefficients. To give an example, if we require Delta E to be $\Delta E_{ab}^*=0.1$ under the FL11 illuminant and we allow the coefficient count to grow up to 21, the Munsell Book of Colours requires 12 coefficients on average if using warping and 16 if not.
+Unfortunately, the results are unsatisfactory. Occasionally, the optimizer fails in so as the fitted curve does not follow the original at all but rather ends up as a spiky spectrum susceptible to metameric artifacts. We show some of these results in~\cref{fig:warping_atlasLatticePoints}.
 
-However, even despite the benefit of having less coefficients to optimize, the average distance between the original and the fitted curves when using either of the cost functions (presented in~\cref{ssec:costFunctions}) is higher for warping. This does necessarily need to imply failure --- as the edges of the curve do not often bear significant color information, we do not require them to be reconstructed as precisely. However, occasionally, the optimizer fails in so as the fitted curve does not follow the original at all but rather ends up as a spiky spectrum susceptible to metameric artifacts. We show some of these results in~\cref{fig:warping_atlasLatticePoints}, where we compare them to the results with the non-warping technique.
+Therefore, we resort to not warping the signal. Although the optimizer must process more coefficients than if the signal was warped (e.g. if seeding with the Munsell Book of Colours with the sufficiency conditions as in~\cref{ssec:noOfMoments}, $16$ coefficients are on average required for storing spectra, as opposed to $12$ if the signal is warped), the artifacts arising when warping the signal are completely eliminated (see~\cref{fig:warping_atlasLatticePoints}). In addition, the average distance between the original and fitted spectra is substantially lower.
 
 \begin{figure}[t]
 	\centering
@@ -101,9 +101,9 @@ However, even despite the benefit of having less coefficients to optimize, the a
 	\label{fig:warping_atlasLatticePoints}
 \end{figure}
 
-For the regular lattice points, we present a similar comparison in~\cref{fig:warping_regularPoints}, where we seed cubes of different sizes with distinct atlases and analyze the spectra at specific points. Not warping the signal is superior to warping even in this case, as it creates smoother spectra with less sharp edges. 
+For the regular lattice points, we present a similar comparison of these two methods in~\cref{fig:warping_regularPoints}, where we seed cubes of different sizes with distinct atlases and analyze the spectra at specific points. Not warping the signal is superior to warping even in this case, as it creates smoother spectra with less sharp edges. 
 
-As we eventually decide on using only 3 coefficients per regular lattice points (see~\cref{ssec:noOfMoments}), and for that purpose, even warping works reasonably well, we do not need necessarily to account for regular lattice points when choosing whether to warp the signal. However, regardless, all the presented evidence points to the superiority of non-warping.
+As we eventually decide on using only 3 coefficients per regular lattice points (see~\cref{ssec:noOfMoments}), and for that purpose, even warping works reasonably well, we do not necessarily need to account for regular lattice points when choosing whether to warp the signal. However, regardless, all the presented evidence points to the superiority of non-warping.
 
 \begin{figure}[t]
 	\centering
@@ -131,9 +131,9 @@ As we eventually decide on using only 3 coefficients per regular lattice points 
 	\label{fig:warping_regularPoints}
 \end{figure}
 
-To justify the failures of warping, we first analyze its behavior during round-trips in comparison to that of not warping. In~\cref{fig:resultsWarping}, we present a few such examples on different curves with different number of coefficients. We can clearly observe the behavior for which warping was designated --- while the slight waves in the middle of the curve (at around 550nm) are reconstructed almost perfectly, the edges of the curve (i.e. the part of the curve leading up to 450nm and from 650nm) are flat and attain constant values.
+To justify the failures of warping, we analyze its behavior during round-trips in comparison to that of not warping. In~\cref{fig:resultsWarping}, we present a few such examples on different curves with different number of coefficients. We can clearly observe the behavior for which warping was designated --- while the slight waves in the middle of the curve (at around 550nm) are reconstructed almost perfectly, the edges of the curve (i.e. the part of the curve leading up to 450nm and from 650nm) are flat and attain constant values.
 
-If warping the signal, the optimizer therefore has very little influence on the edges of the curve, and therefore opts for optimizing only its middle, which might result in amplifying the already created sinusoidal-shapes.
+Therefore, if warping the signal, the optimizer has very little influence on the edges of the curve. For that reason, it opts for optimizing only its middle, which might result in amplifying the already created sinusoidal-shapes.
 
 By not warping the signal, on the other hand, the optimizer focuses on the spectra as a whole and is therefore less prone to spiky artifacts.
 
@@ -175,22 +175,22 @@ Therefore, we conclude that mirroring, but not warping the signal is the optimal
 
 Another important parameter to determine is the number of moments (or coefficients) with which to store spectra at both atlas lattice points and regular lattice points.
 
-We start by analyzing the atlas lattice points. Specifically, we focus on the number of coefficients with which to store atlas entries in step one ref of our implementation, as those are the coefficients that are then used as prior for atlas lattice points. We wish for these coefficients to reconstruct spectra that resemble the original ones as much as possible, so as to avoid color errors under arbitrary illuminants.
+We start by analyzing the atlas lattice points. Specifically, we focus on the number of coefficients with which to store atlas entries in the second step of our implementation (see~\cref{ssec:cubeSeeding}), as those are the coefficients that are then used as prior for atlas lattice points. Naturally, we wish for the reconstruction to be as precise as possible, however, we want to prevent unnecessarily high coefficient counts both to avoid high memory utilization and to simplify the run of the optimizer.
 
 \begin{figure}[t!]
 	\centering
 	\includegraphics[width=0.6\linewidth]{img/results_noOfMoments_deltaE.png}
-	\caption{An}
+	\caption{The average and maximum Delta E error achieved by round-trips, surmised from~\cref{table:comparisonMomentTechnique}}
 	\label{fig:results_noOfMoments_deltaE}
 \end{figure}
 
-By observing~\cref{fig:results_noOfMoments_deltaE}, we see that the Delta E error obtained by round-trips under the CIE illuminants stabilizes at $m=20$, i.e. $c=21$. As the curve precision does not worsen by adding more coefficients to the representation, storing all atlas entries with 21 coefficients might seem to be the optimal solution. However, as already mentioned in ref, it is beneficial for the performance of the optimizer (both from the viewpoint of the resulting curve's shape and the time complexity) to use as little coefficients as possible.
+By observing~\cref{fig:results_noOfMoments_deltaE}, we see that the Delta E error obtained by round-trips under the CIE illuminants stabilizes at $m=20$, i.e. $c=21$. As the curve precision does not worsen by adding more coefficients to the representation, storing all atlas entries with 21 coefficients might seem to be the optimal solution. Such approach is, however, wasteful for multitude of smooth, simple spectra.
 
-Therefore, we decide to store each spectrum with only the necessary number of coefficients. For each atlas entry, we obtain them iteratively --- starting from $c=4$, we check whether the coefficient count is sufficient, and, if not, we increase it and move on to the next iteration, repeating this process up to $m=24$.
+Therefore, we decide to store each spectrum with only the necessary amount of coefficients. We obtain this number for each atlas entry iteratively --- starting from $c=4$, we check whether the coefficient count is sufficient, and, if not, we increase it and move on to the next iteration, repeating this process up to $m=21$.
 
 We determine the sufficiency of a coefficient representation by picking one of the most error-prone illuminants and determining the round-trip error under said illuminant. If the error falls below a certain, pre-defined threshold, we declare the representation sufficient.
 
-We pick the illuminant used for these purposes from the list of the CIE illuminants (excluding the E and D73 illuminants, as these are not yet supported in ART, where we run the experiments). First, we compute the average number of required coefficients to achieve a specific error for each of them. By the assumption that these results give us a rough approximation of the average error, we conclude that the illuminant with the highest coefficient count is the most error-prone.
+To determine which illuminant to use, we performed an experiment in which we computed the average number of coefficients required to achieve a specific error for a set of spectra. We then compared these values for all elements on the list of CIE illuminants (again excluding the E and D73 illuminants). By the assumption that these results give us a rough approximation of the average error, we concluded that the illuminant with the highest coefficient count is the most error-prone.
 
 We present the results of our experiment in~\cref{table:sufficientCoefficientIlluminants}. We use an error of $\Delta E_{ab}^*=0.1$ due to the coefficient count variability under it, but any other would give similar results in terms of the order of the illuminants' coefficient counts.
 
@@ -202,7 +202,7 @@ Although we attribute the failure of Delta E to its non-linearity, we have not y
 
 Our approach for determining the sufficiency of coefficients is definitely not flawless. Firstly, neither the threshold, nor the computation of the error have been properly examined, which implies that there may be other, more suitable options. Secondly, since we examine only 18 CIE illuminants, there is a high chance that other, more error-prone, exist.
 
-Even the assumption that the average coefficient counts determine the worst-performing illuminant falls short. As we have come across multiple atlas entries that attain the highest color error under an illuminant other than FL11, checking whether the error satisfies the threshold for all illuminants might be a more effective approach.
+Even the assumption that the average coefficient count determines the worst-performing illuminant falls short. As we have come across multiple atlas entries that attain the highest color error under an illuminant other than FL11, checking whether the error satisfies the threshold for all illuminants might be a more effective approach.
 
 Furthermore, even if we were to perfect our method, there exist a lot more, vastly different approaches that might be used. However, their exploration and analysis is not within the scope of this thesis, and, as our method produces reasonable results, we leave it for future work.
 
@@ -227,7 +227,7 @@ Furthermore, even if we were to perfect our method, there exist a lot more, vast
 	\label{table:sufficientCoefficientIlluminants}
 \end{table}
 
-Finding the sufficient coefficient count for regular lattice points is a lot more straightforward than for the atlas lattice points. We remind that, in order to avoid interpolation-caused artifacts, we require their spectra to be smooth. This property is especially important if two significantly different, spiky atlas entries are fitted in voxels close to each other. Propagating their original shapes during the cube fitting process would, under a different illuminant, create a noticeable border between the two colors, which is undesired. Rather, we want to see smooth gradients.
+Finding the sufficient coefficient count for regular lattice points is a lot more straightforward than for the atlas lattice points. We remind that the only requirement is for the spectra to be smooth, so as to avoid interpolation-caused artifacts. This property is especially important if two significantly different, spiky atlas entries are fitted in voxels close to each other. Propagating their original shapes during the cube fitting process would, under a different illuminant, create a noticeable color boundary, which is undesired.
 
 Figure~\cref{fig:warping_regularPoints} already suggests that using less coefficients might benefit our smoothness requirement. We put this theory to test by comparing spectra of regular lattice points fitted with a different number of coefficients in cubes of otherwise identical parameters. We present some of the results in~\cref{fig:noOfMoments_regularPoints}.
 
@@ -246,23 +246,23 @@ Figure~\cref{fig:warping_regularPoints} already suggests that using less coeffic
 		\includegraphics[width=\linewidth]{img/results_noOfMoments_regularPts_2.png}
 		\caption{$RGB=(98.7, 205.6, 41.1)$,\\ fitting round $= 9/17$}
 	\end{subfigure} 
-	\caption{Comparison of spectra at regular lattice points when fitting . Cube }
+	\caption{The effects of various choices for the regular lattice points' coefficient count on the shape of their spectra.}
 	\label{fig:noOfMoments_regularPoints}
 \end{figure}
 
-Our assumptions have proven to be correct. By using less coefficients, we limit the optimizer's ability to reconstruct complicated spectra, therefore forcing it to create smooth, simple shapes. Specifically, we decide on using 3 coefficients --- as their shapes are sufficient, using more is unnecessary, however 2 were unable to recreate shapes and often ended up being constant, straight lines.
+Our assumptions have proven to be correct. By using less coefficients, we limit the optimizer's ability to reconstruct complicated spectra, therefore forcing it to create smooth, simple shapes. Specifically, we decide on using 3 coefficients --- as their shapes are sufficient, using more is unnecessary, but 2 were unable to recreate shapes and occasionally ended up reconstructing constant, straight lines.
 
-Additional benefit of using only 3 coefficients per regular lattice point is the lower run-time of cube fitting in comparison to higher number of coefficients, as well as less optimizer failures and therefore no need for invocation of heuristic improvements.
+Additional benefit of using only 3 coefficients per regular lattice point (as opposed to using a higher number) is the lower run-time of cube fitting, as well as less optimizer failures and therefore no need for invocation of heuristic improvements.
 
 \subsection{Cost functions} \label{ssec:costFunctions}
 
-In addition to the moment storage technique, another thing greatly affecting the performance of the fitting are the cost functions of optimizer.
+In addition to the moment storage technique, another thing greatly affecting the outcome of the fitting are the cost functions of optimizer.
 
-For the fitting of the sigmoids, Borgtool uses three cost functions, or \emph{residuals}, each of them specifying the absolute color difference in one axis of the RGB cube. Such an approach outperforms both the Euclidean color distance and even the Delta E difference --- the higher the number of meaningful residuals, the more information about the coefficients' behavior can the optimizer deduce, which, in turn, results in faster and more precise convergence to global optimum.
+For the fitting of the sigmoids, Borgtool uses three cost functions, or \emph{residuals}, each of them specifying the absolute color difference in one axis of the RGB cube. Such an approach outperforms both the Euclidean color distance and even the Delta E difference --- the higher the number of meaningful residuals, the more information can the optimizer deduce about the coefficients' behavior, which, in turn, results in faster and more precise convergence.
 
 As this approach performs rather decently in terms of both time complexity and the obtained results for the sigmoids, we try it out for the purposes of our optimization as well. 
 
-In case of fitting of the regular lattice points (see~\cref{ssec:cubeFitting}), which requires the manipulation of 3 coefficients, the obtained results are satisfactory, both for the fitting in the second round and in the latter rounds (see~\cref{fig:costFunctionsRegularFitting}). The resulting curves are smooth, which suits the interpolation process during rendering, they evaluate to the desired RGB values, and the run-time is even better than for the sigmoids. Therefore, we utilize this approach for the regular lattice points.
+In case of fitting of the regular lattice points (see~\cref{ssec:cubeFitting}), the obtained results are satisfactory, both for the fitting in the second round (i.e. after the ``recalculation'') and in the latter rounds (see~\cref{fig:costFunctionsRegularFitting}). The resulting curves are smooth, they evaluate to the desired RGB values, and the run-time is even better than for the sigmoids. Therefore, for the regular lattice points, we utilize this approach.
 
 \begin{figure}[t]
 	\centering
@@ -271,7 +271,7 @@ In case of fitting of the regular lattice points (see~\cref{ssec:cubeFitting}), 
 	\end{subfigure} \\
 	\begin{subfigure}[t]{0.45\textwidth}
 	\includegraphics[width=\linewidth]{img/cost_functions_regular_round2.png}
-	\caption{Fitting in the second round, i.e. the prior coefficients are the result of ``recomputation'' of the fitted coefficients of an atlas lattice point}
+	\caption{Fitting in the second round, i.e. the prior coefficients are the result of ``recalculation'' of the fitted coefficients of an atlas lattice point}
 	\label{fig:costFunctionsRegularRound2}
 	\end{subfigure} \hspace{0.1em}
 	\begin{subfigure}[t]{0.45\textwidth}
@@ -279,11 +279,11 @@ In case of fitting of the regular lattice points (see~\cref{ssec:cubeFitting}), 
 		\caption{Fitting in round 8/20, where the prior spectrum is that of a regular lattice point}
 		\label{fig:costFunctionsRegularRound8}
 	\end{subfigure} 
-	\caption{Fitting of regular lattice points with 3 cost functions specifying the RGB difference}
+	\caption{Fitting of regular lattice points with 3 RGB cost functions}
 	\label{fig:costFunctionsRegularFitting}
 \end{figure}
 
-However, when fitting the atlas lattice points (see~\cref{ssec:startingPointsFitting}), the fact that the cost functions do not take the resulting shape of the spectra into account in any way works to our disadvantage. We show an example of this in~\cref{fig:resultsCostFunctions} on the magenta plot, which demonstrates the performance of fitting of atlas lattice points with RGB cost functions only. Although it terminates as successful (as the RGB of the resulting curve is within the fitting threshold of the target RGB), the reflectance curve takes on a sinusoidal shape with a rather high amplitude, therefore losing resemblance to the original curve. This is due to definition of coefficients, which are, in their nature, Fourier coefficients, and are therefore prone to exhibiting this type of behavior. This is mainly perceivable when the color distance $d$ between the atlas entry and atlas lattice point is rather high, as it gives the optimizer enough room to make visible changes in the shape of the reconstructed spectrum before converging below the fitting threshold.
+However, for fitting the atlas lattice points, this method is unsatisfactory. Although it terminates as successful (as the RGB of the resulting curve is within the fitting threshold of the target RGB), the reflectance curve takes on a sinusoidal shape with a rather high amplitude, therefore losing resemblance to the original curve. This is due to definition of coefficients, which are, in their nature, Fourier coefficients, and are therefore prone to exhibiting this type of behavior. We show an example of this in~\cref{fig:resultsCostFunctions} on the magenta plot. 
  
 Note that we compare the fitted spectra not with the original atlas spectra, but with the spectra that is reconstructed from the original's coefficients to keep track of the optimizer's ability to mimic its input.
 
@@ -315,33 +315,33 @@ Note that we compare the fitted spectra not with the original atlas spectra, but
 		\caption{``dark skin'' patch of the MCC, $c = 12$, $d = 11.55$}
 		\label{fig:resultsCostFunctions_darkskin}
 	\end{subfigure}
-	\caption{Comparison between the RGB cost functions and our method for fitting atlas lattice points}
+	\caption{Comparison between the RGB cost functions and our cost functions for fitting atlas lattice points}
 	\label{fig:resultsCostFunctions}
 \end{figure}
 
-We therefore conclude that we must incorporate the requirement of curve shape similarity into our cost functions. Following, we review the cost functions that we tried along with their performance.
+We therefore conclude that we must incorporate the requirement of curve shape similarity into our cost functions. Following, we review the approaches we attempted along with their outcomes.
 
-Firstly, we implemented an approach similar to that for determining the number of coefficients with which to store atlas entries (see ref), i.e. we utilized the color error under a fluorescent illuminant (specifically, FL11). We defined three additional cost functions, each specifying the difference between the original and the reconstructed curve's RGB under the FL11 illuminant in one of the axes. If their values fell below a specific threshold, we terminated the fitting process as successful, if not, we increased the threshold and tried again.
+The first idea was to implement an approach similar to that for determining the number of coefficients with which to store atlas entries (see~\cref{ssec:noOfMoments}), i.e. to utilize the color error under a fluorescent illuminant (specifically, FL11). We defined three additional cost functions, each specifying the difference between the original and the reconstructed curve's RGB under the FL11 illuminant in one of the axes. If their values fell below a specific threshold, we terminated the fitting process as successful, if not, we increased the threshold and tried again.
 
-Although this approach was successful on average (the average threshold was around $t = 0.025$), on occasion, the threshold often needed to be increased to values so high that it became obsolete. Using only one error, either the Euclidean distance or the Delta E error, caused similar issues.
+Although this approach was successful on average (the average threshold was around $t = 0.025$), occasionally, the threshold often needed to be increased to values so high that it became obsolete (i.e. $t = 1$). Using only one error, either the Euclidean distance or the Delta E error, caused similar issues.
 
-Therefore, we decided to focus on the actual distance between the two curves. Our first attempt consisted of defining one residual per wavelength sample specifying the absolute distance between the two spectra at said wavelength (as the least square error proved to perform worse). We examined the performance of both around 360 residuals (i.e. 1nm increment between samples) and 36 residuals (10nm increment, as defined in most color atlases) when used alongside the 3 already defined RGB residuals. For $c \le 9$, both of these options performed reasonably well. When fitting more coefficients, the sufficient threshold was, on average, around $t = 0.0096$, both before and after the introduction of our improvement of optimizing only first 4 coefficients, and although its maximum ended up being $t = 0.23$, overall, this method outperformed the previous one.
+Therefore, we decided to focus on the actual distance between the two curves. Our first attempt consisted of defining one residual per wavelength sample, which specified the absolute distance (as the least square error proved to perform worse) between the two spectra at said wavelength. We examined the behavior of the optimizer both for around 360 residuals (i.e. 1nm increment between samples) and 36 residuals (10nm increment, as defined in most color atlases) when used alongside the 3 already defined RGB residuals. For $c \le 9$, both of these options performed reasonably well, and for $c > 9$ coefficients, the sufficient threshold was, on average, around $t = 0.0096$, for which the curves were fitted quite accurately.
 
-As we suspected that the failures were caused by the abundance of cost functions, we summed up their values and saved them into a single residual, which, when divided by the number of spectral samples, represented the average error per sample.
+However, although this method definitely outperformed the previous one, it did not completely eliminate the sinusoidal-like artifacts. During our tests, we came across thresholds as high as $t = 0.23$, which definitely needed improvement.
 
-As the importance of curve samples in terms of proper color reconstruction is mainly placed on their middle (at around 550nm), we attempted to add a heuristic-based weighting factor in an effort to focus on minimizing the distance between the two curve there. However, we did not succeed in improving our results, and we therefore dropped the experiment and examined the performance without weighting the values.
+As we suspected that the failures of the optimizer with lower threshold values were caused by the abundance of cost functions, we summed up their values and saved them into a single residual, which, when divided by the number of spectral samples, represented the average absolute error per sample.
 
-Such an approach substantially outperformed the previous ones, and even more after we decided to specify the absolute error rather than the least square error. The average error ended up being only about $d = $, and, of yet, no entry requiring $d > $ has been encountered. Therefore, we concluded that the optimal solution to our problem is to set 4 residuals, 3 specifying the RGB difference, and 1 specifying the average distance per sample.
+As the importance of curve samples in terms of proper color reconstruction is mainly placed on their middle (at around 550nm), we attempted to add a heuristic-based weighting factor in an effort to focus on minimizing the distance between the two curve there. However, we did not succeed in improving our results, and we therefore dropped the experiment and examined the optimizer's behavior without weighting the values.
 
-We present some of the results achieved with our cost functions on the green plot in~\cref{fig:resultsCostFunctions}, where we compare them to fitting with RGB cost functions only. In~\cref{fig:resultsCostFunctions_mcb0725} and~\cref{fig:resultsCostFunctions_darkskin}, we specifically focus on the most problematic spectra with the highest distance $d$ between the atlas lattice point and the atlas entry.
+The proposed method substantially outperformed the previous ones. The average error ended up being only about $d = $, and, of yet, no entry requiring $d > $ has been encountered. Therefore, we concluded that the optimal solution to our problem is to set 4 residuals, 3 specifying the RGB difference, and 1 specifying the average distance per sample.
+
+We present some of the results achieved with our cost functions in~\cref{fig:resultsCostFunctions}, where we compare them to fitting with RGB cost functions only. In~\cref{fig:resultsCostFunctions_mcb0725} and~\cref{fig:resultsCostFunctions_darkskin}, we specifically focus on the most problematic spectra with the highest distance $d$ between the atlas lattice point and the atlas entry.
 
 Although our approach substantially reduces the appearance of sinosidual-like behavior, it does not diminish it completely. It can be observed especially for atlas lattice points with $c > 14$ (see~\cref{fig:resultsCostFunctions_mcb0725}). This is due to the fact that we optimize only the first 4 coefficients, which, in their nature, are prone to creating such patterns.
 
-Another drawback of our approach is the substantially larger time complexity, especially if improvement heuristics need to be applied. By examining the scope of the optimizer and utilizing its options further, or maybe even resorting to a different method of optimization, we might be able to improve upon both the time complexity, and the resulting spectral shape.
+Another drawback of our approach is the substantially greater time complexity, especially if improvement heuristics need to be applied. By examining the scope of the optimizer and utilizing its options further, or maybe even resorting to a different method of optimization, we might be able to improve upon both the time complexity and the resulting spectral shape.
 
-However, as the runtime is not the focus of this thesis and as the resulting shapes are satisfactory for the purposes of this these, we focused our efforts elsewhere and leave these improvements for future work.
-
-When fitting other spectral data, the optimizer does not behave as drastically as shown in~\cref{fig:resultsCostFunctions}. On the contrary, many fitted altas entries (such as the ``blue flower'' of the Macbeth Color Checker) resemble their input quite well. However, we must focus on the worst-case scenario as we do not wish to experience any metameric artifacts, not even in one color.
+However, as the runtime is not the focus of this thesis and as the resulting shapes are satisfactory for the purposes of accurate uplifting, we leave these improvements for future work.
 
 \section{Resulting images}
 
@@ -351,6 +351,8 @@ we spectrally render an image using a set of spectra (we denote this image the o
 The ideal way to do this
 
 heuristics performance, overall runtime of the cube
+
+TO DO - dorobit v predchadzajucej kapitole ten average a maximum threshold. 
 
 
 \begin{figure}[t]

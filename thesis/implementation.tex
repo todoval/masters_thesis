@@ -29,6 +29,7 @@ In addition to supporting variable number of coefficients (ranging from 3 to 21)
 In addition to the cube structure, the uplifting process of the trigonometric moment cube is also similar to the one of the sigmoid cube, which closely follows~\cref{alg:upliftingAlgSigmoid}. Its main distinctions are in the constraining process (which the sigmoid cube lacks) and in the first round of optimizing, or, as we refer to from now on, \emph{fitting}.
 
 Following, we name the individual steps of the process, which we then analyze in greater detail.
+
 \begin{enumerate}
 	\item \emph{Initialization}
 	\item \emph{Cube seeding (optional)}
@@ -91,7 +92,7 @@ We store the spectral curves of the individual atlas entries with Fourier coeffi
 
 The number of coefficients per atlas entry is variable, ranging from 4 to 21. We explain our method for determining the sufficiency of coefficient representation, and therefore the coefficient count for each atlas entry, in~\cref{ssec:noOfMoments}.
 
-\subsection{Cube seeding} 
+\subsection{Cube seeding} \label{ssec:cubeSeeding}
 
 In order to uplift the whole cube as described in~\cref{alg:upliftingAlgSigmoid}, we must first fit one or more \emph{starting points}, whose coefficients can then be used as prior for the fitting of other lattice points. For these purposes, we utilize the user-specified color atlas. The general idea behind this process is to copy the coefficients of atlas entries to specific lattice points, and then use these coefficients as prior for fitting said lattice points. We refer to this process as \emph{seeding}, and term the seeded lattice points \emph{atlas lattice points}.
 
@@ -118,7 +119,7 @@ A realistic approach would be to create a complete injective mapping between the
 	\label{fig:seedingMethodInterpolation}
 \end{figure}
 
-During the seeding process, it may occur that two atlas entries would fall into neighboring voxels, i.e. that they would share some of the voxel corners. We solve such collisions by utilizing the possibility of one lattice point having multiple coefficient representations. In addition to coefficients and their count, we also store an entry ID per each representation, so as to later distinguish the reconstructed curves during rendering and decide which to employ, which we explain in more detail in ref.
+During the seeding process, it may occur that two atlas entries would fall into neighboring voxels, i.e. that they would share some of the voxel corners. We solve such collisions by utilizing the possibility of one lattice point having multiple coefficient representations. In addition to coefficients and their count, we also store an entry ID per each representation, so as to later distinguish the reconstructed curves during rendering and decide which to employ (explained in more detail in~\cref{sec:rendererIntegration}).
 
 If two atlas entries fall into the same voxel, however, there is no way to determine the interpolation of which the user desires upon uplifting the RGB values inside said voxel. We therefore discard one of the entries and throw an error informing the user of the collision and suggesting to increase of the cube dimension.
 
@@ -344,7 +345,7 @@ Note that storing the target RGB of lattice points is unnecessary, as it can com
 
 In addition to storing the cube, we extend Borgtool with the functionality to load such a cube and utilize it for either the purposes of texture uplifting (specifically, uplifting of the texture in~\cref{fig:sigUpliftOriginal}) or for its 3D visualization.
 
-\section{ART integration}
+\section{ART integration} \label{sec:rendererIntegration}
 
 In order to demonstrate the proper utilization and, subsequently, the performance of the trigonometric moment cube, we integrate it into an existing renderer --- ART. As ART already has the support for uplifting with the sigmoid cube, we solely extend both its cube structure and uplifting capabilities in a similar manner as in the Borgtool. For the scene description files, we add an option for specifying the cube file to be used for uplifting --- due to our extension in terms of the \emph{flag} parameter, we are capable of recognizing the type of the cube without it being manually specified by the user.
 

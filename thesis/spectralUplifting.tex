@@ -157,7 +157,7 @@ In other words, the user would define specific RGB:spectra mappings which would 
 
 We call this process \emph{constrained spectral uplifting}. The fact that it does not provide as much freedom as other spectral uplifting approaches works for our benefit, as the results are not a subject to high metamerism, which is, after all, the goal of this thesis.
 
-In this thesis, we base the algorithm used to implement constrained spectral uplifting on~\cref{alg:upliftingAlgSigmoid}. We also use an RGB cube as a structure for saving the mappings, and we also create an uplifting model before rendering. We leave the specific details of implementation to ref. In this section, we discuss the theoretical background of the constraining itself. Specifically, we focus on the means of storing the individual spectra in our structure and the problems that arise along with it.
+In this thesis, we base the algorithm used to implement constrained spectral uplifting on~\cref{alg:upliftingAlgSigmoid}. We also use an RGB cube as a structure for saving the mappings, and we also create an uplifting model before rendering. We leave the specific details of implementation to~\cref{chap:implementation}. In this section, we discuss the theoretical background of the constraining itself. Specifically, we focus on the means of storing the individual spectra in our structure and the problems that arise along with it.
 
 \subsection{Spectral sampling}
 
@@ -205,7 +205,7 @@ Following, we provide a brief overview of both the algorithm for obtaining coeff
 
 The first problem with obtaining the coefficients is caused by the shape of the spectra. In contrast to the Fourier basis, they are aperiodic. Their storage with Fourier coefficients therefore requires their conversion to a periodic signal.
 
-A simple solution would be to linearly map wavelengths to a $2\pi$-periodic signal. Although such an approach can be used (we discuss its performance in ref), it causes distortions and strong artifacts at the boundaries. Moreover, Fourier coefficients computed for such signal are complex instead of real, which requires almost twice the memory for storage.
+A simple solution would be to linearly map wavelengths to a $2\pi$-periodic signal. Although such an approach can be used (we discuss its performance in~\cref{sec:storingMoments}), it causes distortions and strong artifacts at the boundaries. Moreover, Fourier coefficients computed for such signal are complex instead of real, which requires almost twice the memory for storage.
 
 Therefore, an improvement to the mapping, called \emph{mirroring}, is proposed. It first maps the negative values of the signal as in the following equation:
 \begin{equation} \label{wavelengthPhaseMapping}
@@ -215,7 +215,7 @@ The mapping for the positive part is then defined as the negative part mirrored,
 
 Another proposed improvement to obtaining the coefficients is by focusing accuracy on important regions of the curve in terms of color reconstruction (i.e. around 550nm), also called \emph{warping}. This is achieved by means of a differentiable, bijective function that maps the wavelength range to the $[-\pi, 0]$ range and is used as a weighting function when computing coefficients. Warping of the signal is useful especially when using only a small number of coefficients, as they are unable to capture more complex curves, and it is highly recommended to always warp the signal if using less than 5 moments.
 
-We explain our choice of the signal mapping method used for the purposes of this thesis in ref, where we also provide results of experiments that affirm our decision.
+We explain our choice of the signal mapping method used for the purposes of this thesis in~\cref{sec:storingMoments}, where we also provide results of experiments that affirm our decision.
 
 Note that using $m$ complex Fourier coefficients for storing a spectrum implies that that $m+1$ coefficients are actually saved. The $+1$ factor stands for the zeroth moment $c_0$, which is real in both the mirrored and the non-mirrored case. Therefore, overall, mirroring requires storing $m+1$ scalars, while non-mirroring requires $2m+1$ scalars.
 
