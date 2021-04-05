@@ -97,18 +97,19 @@
 % An optional dedication: you can thank whomever you wish (your supervisor,
 % consultant, a person who lent the software, etc.)
 \def\Dedication{%
-I would like to express my sincere gratitude to my supervisor doc. Alexander Wilkie, Dr., for his time, guidance and patience over the last year.
-I would also like to thank my boyfriend, my family and my friends for their constant support.
+I would like to express my sincere gratitude to my supervisor, doc. Alexander Wilkie, Dr., for his time, guidance and patience over the last year.
+I would also like to thank my boyfriend, my family and my friends for their support and encouragement.
 }
 
 % Abstract (recommended length around 80-200 words; this is not a copy of your thesis assignment!)
 \def\Abstract{%
-Abstract.
+
+Physically-based spectral rendering is increasingly becoming a popular tool in both commercial and academic areas due to its ability to accurately simulate natural phenomena. However, the production of RGB-based textures is significantly easier, which makes their utilization in spectral renderers a desired feature. To convert RGB values to their spectral representation, a process called spectral uplifting is employed. As the RGB color space is a finite subset of the visible gamut, there exist multiple conversion techniques producing distinct results. These variations cause color inconsistencies under various lighting conditions. This thesis proposes a method for constraining the spectral uplifting process, i.e. for preserving pre-defined spectral representations for a desired subset of RGB values. In order to assess its correctness, this technique is then implemented and evaluated in a spectral renderer. The uplifted renders using our method show minimal discrepancies when compared to the original textures.
 }
 
 % 3 to 5 keywords (recommended), each enclosed in curly braces
 \def\Keywords{%
-{key} {words}
+{spectral uplifting} {spectral rendering}
 }
 
 %% The hyperref package for clickable links in PDF and also for storing
