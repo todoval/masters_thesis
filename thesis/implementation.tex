@@ -229,48 +229,83 @@ We refer to the conversion process as \emph{coefficient recalculation}. It consi
 	\centering
 	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
 	\includegraphics[width=0.8\linewidth]{img/recalculation.png}
-	\caption{An illustrative demonstration of the coefficient recalculation experiment}
+	\caption{An illustrative demonstration of a problem posed by the coefficient recalculation of an atlas lattice point with multiple metameric spectra (stored in the form of moment representations).}
 	\label{fig:recalculation_process}
 \end{figure}
 
-If a coefficient recalculation of an atlas lattice point with multiple fits is required, we interpolate the spectra of all of its fits and save the result with 3 coefficients. In terms of the smoothness of color gradients in the cube, this approach is more reliable and stable than if we were to pick only one of its fits and work with it. To support our claim and explain it more thoroughly, we run the following experiment comparing these methods (illustrated in~\cref{fig:recalculation_process}):
+A problem arises if the atlas lattice point that is being recalculated for the purposes of fitting a regular lattice point contains multiple moment representations from different metameric families. We illustrate this situation in~\cref{fig:recalculation_process}. The recalculated atlas lattice point (denoted $x$) contains the moment representation of both the constraint $A$ and $B$. As these have vastly distinct shapes, it is natural that they evaluate to completely different colors under error-prone illuminants (specifically, the colors shown in the image are under FL11). Choosing to recalculate only the representation of $A$ in order to obtain the prior coefficients of the regular lattice point (denoted $y$) would result in significant color artifacts between $y$ and the voxel seeded with $B$. Symmetrically, the same applies to choosing to recalculate only the coefficient representation of $B$. We can also observe this in~\cref{fig:recalculation_colorGradients}, where we present the comparison of the color gradients created by respectively using the individual recalculation techniques. Note that the spectrum (and, subsequently, color) that the $A$ and $B$ entries evaluate to in both~\cref{fig:recalculation_process} and~\cref{fig:recalculation_colorGradients} is not the original spectrum of the atlas entries, but the spectrum that the coefficient representations saved at the atlas lattice point $x$ evaluate to. Also note that the spectra and colors corresponding to point $y$ are the recalculation results, not the final fitting results.
 
-We seed a cube with two atlas entries, $A$ and $B$, that have vastly distinct shapes of their reflectance spectra but evaluate to neighboring voxels. This implies that there must exist an atlas lattice point $x$ that contains both coefficient representation of the seeded atlas entries. We pick a regular lattice point $y$ from the neighborhood of $x$ and we compute its prior coefficients with the following three methods --- we recalculate them from the representation of $A$ saved in $x$ only, from the representation of $B$ saved in $x$ only, and from their interpolation. We then compare the resulting curves. For visualization purposes, we also include the colors these curves, along with the curves of $A$ and $B$, evaluate to under the FL11 illuminant. Additionally, we present the comparison of the color gradients created by respectively using these recalculation techniques in~\cref{fig:recalculation_colorGradients}.
+\begin{figure}[t!]
+	\centering
+	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
+	\captionsetup[subfigure]{justification=centering}
+	\begin{subfigure}[t]{0.30\textwidth}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitGreen.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
+		\caption{Recalculation of the coefficient representation of $A$ only}
+		\label{fig:recalculation_colorGradients_green}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.30\textwidth}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_interpolated.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
+		\caption{Recalculation of the interpolation between\\ $A$ and $B$}
+		\label{fig:recalculation_colorGradients_interpolated}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.30\textwidth}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitRed.png}
+		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
+		\caption{Recalculation of the coefficient representation of $B$ only}
+		\label{fig:recalculation_colorGradients_red}
+	\end{subfigure}
+	\caption{Color gradients resulting from our experiment in~\cref{fig:recalculation_process}. For each figure, the upper and the lower patch stand for the colors of coefficient representations of $A$ and $B$ respectively, while the middle patch stands for the color of the current recalculation technique.}
+	\label{fig:recalculation_colorGradients}
+\end{figure}
 
-Note that the spectrum (and, subsequently, color) that the $A$ and $B$ entries evaluate to is not the original spectrum of the atlas entries, but the spectrum that the coefficient representations saved at the atlas lattice point $x$ evaluate to.
+As it is our intention to keep the color transitions within all voxel pairs smooth, we propose the interpolation of the spectra reconstructed from the moment representations.
 
- \begin{figure}[t!]
- 	\centering
- 	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
- 	\captionsetup[subfigure]{justification=centering}
- 	\begin{subfigure}[t]{0.30\textwidth}
- 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
- 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitGreen.png}
- 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
- 		\caption{Recalculation of the coefficient representation of $A$ only}
- 		\label{fig:recalculation_colorGradients_green}
- 	\end{subfigure}
- 	\begin{subfigure}[t]{0.30\textwidth}
- 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
- 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_interpolated.png}
- 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
- 		\caption{Recalculation of the interpolation between\\ $A$ and $B$}
- 		\label{fig:recalculation_colorGradients_interpolated}
- 	\end{subfigure}
- 	\begin{subfigure}[t]{0.30\textwidth}
- 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
- 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitRed.png}
- 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
- 		\caption{Recalculation of the coefficient representation of $B$ only}
- 		\label{fig:recalculation_colorGradients_red}
- 	\end{subfigure}
- 	\caption{Color gradients resulting from our experiment in~\cref{fig:recalculation_process}. For each figure, the upper and the lower patch stand for the colors of coefficient representations of $A$ and $B$ respectively, while the middle patch stands for the color of the current recalculation technique.}
- 	\label{fig:recalculation_colorGradients}
- \end{figure}
- 
-If all the fits of an atlas lattice point contribute to the prior coefficients, the color difference between the result and the original fits is relatively similar for each fit. If, on the other hand, the point's prior coefficients come from one fit only, the reduced color difference between the point and the original fit comes at a cost of rather significant artifacts between the other entries. 
+\subsubsection{Interpolation of metamers}
+\label{sect:ims}
+In the following, we show that the linear combination of two spectra that are metameric under a given light source results in another metameric spectrum. To our best knowledge, this insight, while not particularly mathematically complex, has not been explicitly stated in graphics literature before.
 
-As we prefer to keep the cube's gradients as smooth as possible, we opt for the interpolation of fits.
+Let us assume the spectral power distributions of two metamers saved at a lattice point, $P_1(\lambda)$ and $P_2(\lambda)$, that satisfy the conditions
+\begin{equation} 
+\begin{aligned}
+\int P_1(\lambda)\overline{r}(\lambda)d\lambda=\int P_2(\lambda)\overline{r}(\lambda)d\lambda\\
+\int P_1(\lambda)\overline{g}(\lambda)d\lambda=\int P_2(\lambda)\overline{g}(\lambda)d\lambda\\
+\int P_1(\lambda)\overline{b}(\lambda)d\lambda=\int P_2(\lambda)\overline{b}(\lambda)d\lambda\\
+\end{aligned}
+\label{equation:metamers}
+\end{equation}
+where $\overline{r}(\lambda)$, $\overline{g}(\lambda)$ and $\overline{b}(\lambda)$ are the RGB color matching functions.
+
+Let us express the R component of the RGB value resulting from the linear combination of $P_1(\lambda)$ and $P_2(\lambda)$ as follows:
+\begin{equation}
+\begin{aligned}
+R = \int a \cdot P_1(\lambda)\overline{r}(\lambda)d\lambda + 
+b \cdot P_2(\lambda)\overline{r}(\lambda)d\lambda,\\
+\text{where}\ a + b = 1
+\end{aligned}
+\end{equation}
+
+By rewriting this expression and utilizing the equality from~\cref{equation:metamers}, we get
+\begin{equation*}
+\begin{aligned}
+R = a \cdot \int P_1(\lambda)\overline{r}(\lambda)d\lambda +
+(1-a) \cdot \int P_1(\lambda)\overline{r}(\lambda)d\lambda,\\
+\end{aligned}
+\end{equation*}
+So
+\begin{equation*}
+\begin{aligned}
+R = \int P_1(\lambda)\overline{r}(\lambda)d\lambda\\
+\end{aligned}
+\end{equation*}
+The same proof can be equivalently applied to the G and B components of the resulting RGB value. Therefore, we conclude that the resulting spectral distribution is also a metamer.
+
+We use this observation in order to achieve smoother color transitions between distinct metameric families by interpolating between metameric spectra stored (in the form of moment representations) at lattice points that contain multiple coefficient representations. In this manner, we obtain 
 
 Other than the coefficient recalculation, our fitting process is carried out in a manner similar to that of the sigmoid fitting (see~\cref{alg:upliftingAlgSigmoid}), where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind the fitting algorithm used in our implementation in~\cref{alg:upliftingAlgMoments}. Note that each round of the fitting is multithreaded, which substantially increases the time performance.
 

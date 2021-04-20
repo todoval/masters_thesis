@@ -4,19 +4,30 @@ While spectral rendering offers many advantages in terms of physical correctness
 
 Another reason for the disinclination towards spectral renderers is the deficiency of spectral textures. The process behind their creation is, in comparison to RGB-based textures, a lot more complicated. It usually requires a real-life model whose reflectance spectra must be measured with a spectrometer, which is, in many cases, virtually impossible.  
 
-Spectral renderers are, nonetheless, used both in the research and in the commercial sphere (e.g. ART, Mitsuba, Manuka). To eliminate the need for a repeated creation of the textures from scratch, a technique for utilizing the already existing RGB models by converting them to their spectral variants has been proposed. We refer to this process as \emph{spectral uplifting}, however, other sources also use the term \emph{spectral upsampling}~\cite{sigmoidMethod}.
+Spectral renderers are, nonetheless, used both in the research and in the commercial sphere (e.g. ART, Mitsuba, Manuka). To make spectral rendering possible while utilizing RGB textures as input, a reliable conversion from RGB to spectral data has been proposed. We refer to this process as \emph{spectral uplifting}, however, other sources also use the term \emph{spectral upsampling}~\cite{upsamplingFluorescence}.
 
 Converting an RGB value into its respective spectrum poses multiple difficulties. As the relationship between the spectral and the RGB domain is not bijective (specifically, infinitely many spectral distributions render the same RGB values), distinctive approaches to the conversion process may render different spectral distributions. Although all of them might be correct in terms of the resulting RGB value, it is possible that none of them would be identical to spectral distribution measured with a spectrometer.
 
-This does not cause a problem under standard illuminant with regard to which the RGB values were uplifted. However, as already mentioned in~\cref{item:metamerism}, changing the illuminant may result in a rather significant color change due to metamerism. Therefore, our uplifted spectra might behave differently than they would in real world. sem dam obrazok ak ho budem mat
+This does not cause a problem under standard illuminant with regard to which the RGB values were uplifted. However, as already mentioned in~\cref{item:metamerism}, changing the illuminating conditions may result in a rather significant color change due to metamerism. This may cause issues with spectra created by an uplifting process, which are, with the current technology, arbitrary metamers. Therefore, the appearance of assets defined via RGB can be somewhat unpredictable under changing illumination, which is in turn unacceptable for e.g. workflows with very high demands on visual consistency between plate footage and VFX renders.
 
-We begin this chapter by reviewing the already existing approaches to spectral uplifting. We then talk about a novel technique, \emph{constrained spectral uplifting}, which provides means for eliminating metamerism during uplifting and the implementation of which is the goal of this thesis.
+We demonstrate this problem in~\cref{fig:spectral_uplifting_photos}. The Munsell Book of Color, pages of which are shown in the images, is an old color atlas, which was defined before fluorescent lights were common. The yellow pages of the atlas are known to exhibit noticeable distortions in the color gradient of the samples when viewed under fluorescent or LED light sources. If an RGB texture of an atlas page were used as input, a naive uplifting technique would have no chance of reproducing the fact that under one type of light source there is a smooth gradient, while under others the gradient breaks down. 
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.45\linewidth]{img/rendering_realbox_d65.jpg} 
+	\quad
+	\includegraphics[width=0.45\linewidth]{img/rendering_realbox_fluo.jpg}
+	\caption{Photos of four Munsell Book of Color pages (050B, 075Y, 100Y and 075R) in an xRite Judge QC viewing booth. \textbf{Left:} daylight \textbf{Right:} fluorescent light. The photos are white balanced so that the neutral patches on the color checker match.}
+	\label{fig:spectral_uplifting_photos}
+\end{figure}
+
+We begin this chapter by reviewing the already existing approaches to spectral uplifting. We then talk about a novel technique, \emph{constrained spectral uplifting}, which provides means for preserving the original metameric artifacts during uplifting and the implementation of which is the goal of this thesis.
 
 \section{Uplifting methods} \label{sec:upliftingMethods}
 
 Although there have been multiple attempts at spectral uplifting, not many meet all the conditions required for a successful and complete conversion. Some of the methods, for example, output reflectance spectra with values outside the (0,1) range, others work for saturated colors only, others cause noticeable round-trip errors (i.e. the difference between the original RGB and the RGB of the uplifted spectrum is not negligible), etc.
 
-Following, we overview the most popular approaches to spectral uplifting and call attention to their advantages and disadvantages. We base most of this section on an article by~\citet{upsamplingTechniques}, which, in addition to providing a survey of existing techniques, proposes a new one that is considered to be the current state of the art.
+Following, we overview the most popular approaches to spectral uplifting and call attention to their advantages and disadvantages. We base most of this section on an article by~\citet{upsamplingFluorescence}, which, in addition to providing a survey of existing techniques, proposes a new one that is considered to be the current state of the art.
 
 \paragraph{MacAdam.} One of the first techniques was proposed in an article by~\citet{upsamplingMacAdam}, which primarily focused on achieving the highest possible brightness for a given color saturation in printing. The uplifting process was only a byproduct of a proof of the limits to the colors' brightness, created especially for representing the reflectance of the researched colors (i.e colors of maximum brightness for any given saturation). Although this method is not limited to a specific input, it produces spectra that are box-shaped and only consist of rising and falling edges. This type of representation is unsuitable for reflectances usually found in nature, which tend to have a smoother curve.
 
