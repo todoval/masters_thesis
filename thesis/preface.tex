@@ -1,17 +1,15 @@
 \chapter*{Introduction}
 \addcontentsline{toc}{chapter}{Introduction}
 
-Over the last few years, the demand for physical accuracy of the rendering process has grown substantially. By providing the renderer with the capability to physically simulate light transport, we can recreate natural phenomena such as metamerism, fluorescence, polarization, etc\ldots~To do so, the internal color representation is required to be as close to the visible light's spectral power distribution as possible. However, the advantages of this approach are often not worth the complexity of its implementation.
+Over the last few years, the demand for physical accuracy of the rendering process has grown substantially. By providing the renderer with the capability to physically simulate light transport, we can recreate natural phenomena such as metamerism, fluorescence, polarization, etc\ldots~Such simulations require the internal color representation to be as close to the visible light's spectral power distribution as possible. However, the advantages of these representations are often not worth the complexity of their implementation.
 
-Even though the most correct physically-based approach to color representation is representing it as it is in nature, which is a spectral distribution of wavelength, its advantages are, in many cases, not worth the complexity of its implementation.
-
-Therefore, vast majority of the conventional renderers internally represent color as an RGB tristimulus value, mainly due to the simplicity and the robustness of such systems. Additionally, almost all of the already existing assets, such as input textures and materials, are defined in RGB, as their creation and usage is fairly simple. Spectral assets require a real-life model whose reflectance must be measured with a spectrometer. Such a process is both tedious and, in many cases, even impossible.
+Therefore, vast majority of the conventional renderers internally represent color as an RGB tristimulus value, mainly due to the simplicity and the robustness of such systems. Additionally, almost all of the already existing assets, such as input textures and materials, are defined in RGB, as their creation and utilization is fairly simple. Spectral assets require a real-life model whose reflectance must be measured with a spectrometer, which is both tedious and, in many cases, even impossible.
 
 To preserve the physical correctness of the spectral rendering process while utilizing RGB textures as its input, a conversion from the color's RGB representation to its spectral variant is needed. Such process is called \emph{spectral uplifting}, also known as \emph{spectral upsampling}.
 
-However, the conversion process is not straightforward. As the RGB color space is intrinsically smaller than the gamut of visible light, there exist multiple (infinitely many) spectral representations of the same RGB color. Such spectral variations are called \emph{metamers}, and can cause inconsistencies under different lighting conditions. Various uplifting techniques might therefore provide different results, none of which necessarily have to match the real measured spectra.
+However, as the RGB color space is intrinsically smaller than the gamut of visible light, there exist multiple spectral representations of the same RGB color. Such spectral variations are called \emph{metamers}, and can cause color discrepancies under different lighting conditions. Various uplifting techniques might therefore provide different results, none of which necessarily have to match the real measured spectra.
 
-The goal of this thesis is to extend an already existing uplifting system with the capability to constrain itself with pre-defined spectra:RGB mappings, which must be preserved during the uplifting process. All the other RGB input values should return plausible synthetic data which smoothly interpolates the measured spectra.
+The goal of this thesis to create an uplifting model with the capability to constrain itself with pre-defined spectra:RGB mappings, which must be preserved during the uplifting process. All the other RGB input values should return plausible synthetic data which smoothly interpolates the measured spectra.
  
 \section*{Related work}
 

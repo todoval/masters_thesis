@@ -1,8 +1,8 @@
 \chapter{Results} \label{chap:results}
 
-In this chapter, we analyze the accuracy of our method for constrained spectral uplifting. We start by focusing on the effects of various implementation details on the results and justifying our decisions regarding their selection. Afterward(?), we present the actual results of the constrained uplifting process, and compare its accuracy to the sigmoid-based uplifting.
+In this chapter, we analyze the accuracy of our method for constrained spectral uplifting. We start by focusing on the effects of various implementation details on the results and justifying our decisions regarding their selection. Afterward, we present the actual results achieved in the form of rendered images, and analyze them in terms of their colorimetric properties.
 
-We conclude this chapter by summing up the main drawbacks, and proposing improvements for future work.
+We conclude this chapter by shortly overviewing the performance of our method by providing measurements of both memory utilization and time performance, and proposing improvements for future work.
 
 \section{Implementation choices}
 
@@ -16,14 +16,13 @@ The structure of the trigonometric moment cube resulting from the implemented Bo
 This sections overviews our decision-making process regarding these issues, and presents results achieved with other methods to support our claim.
 
 \subsection{Signal mapping techniques} \label{sec:storingMoments}
-outperformed the previous one
 The first thing we analyze and decide on is the technique used for mapping wavelengths to a signal for the storage and subsequent reconstruction of moments. As already mentioned in~\cref{par:spectrumToCoefficientConversion}, we have the choice of both mirroring and warping the signal, which overall creates four options --- using only mirroring, using only warping, using both or using neither, i.e. utilizing the original signal.
 
 Note that our requirements for the resulting spectral shapes differ depending on the type of the lattice point. For the atlas lattice points, we aim for the highest possible precision in terms of curve reconstruction, so as to lose as little information about the original atlas entry as possible. Regular lattice points, however, do not have a prior atlas entry that their spectra must approximate. Therefore, in order to prevent color artifacts upon interpolation, we mainly aim for their smoothness.
 
 In addition to the reconstructed shape, we must also take the behavior of the optimizer (i.e. how well it improves upon its prior coefficients under the given signal mapping technique) into account.
 
-We start by focusing on the accuracy of the reconstruction of atlas lattice points. We run an experiment across multiple color atlases (specifically the Pantone Color System, Munsell Book of Colours and the Macbeth Colour Checker SG) and multiple CIE illuminants in which we compare the average and maximum round-trip errors of spectra under illuminants for all four techniques. Due to its continuous nature, we use the Delta E as the error measure.
+We start by focusing on the accuracy of the reconstruction of atlas lattice points. We run an experiment across multiple color atlases (specifically the Pantone Color System, Munsell Book of Colors and the Macbeth Color Checker SG) and multiple CIE illuminants in which we compare the average and maximum round-trip errors of spectra under illuminants for all four techniques. Due to its continuous nature, we use the Delta E as the error measure.
 
 In~\cref{sec:completeMomentError}, we provide all results obtained from these experiments. Note that using $n$ moments requires storing $n+1$ values in case mirroring is used (i.e. the moments are real) and $2n+1$ values otherwise (i.e. the moments are complex). As, from the implementation point of view, we are interested in the number of $coefficients$ needed for storage (i.e. the number of $double$ values per lattice point) rather than the number of moments, we surmise the contents of~\cref{sec:completeMomentError} in~\cref{table:comparisonMomentTechnique}, where we present the obtained errors according to the number of coefficients.
 
@@ -73,7 +72,7 @@ By applying the same principle when choosing whether to warp the signal, we assu
 
 Unfortunately, the results are unsatisfactory. Occasionally, the optimizer fails in so as the fitted curve does not follow the original at all but rather ends up as a spiky spectrum susceptible to metameric artifacts. We show some of these results in~\cref{fig:warping_atlasLatticePoints}.
 
-Therefore, we resort to not warping the signal. Although the optimizer must process more coefficients than if the signal was warped (e.g. if seeding with the Munsell Book of Colours with the sufficiency conditions as in~\cref{ssec:noOfMoments}, $16$ coefficients are on average required for storing spectra, as opposed to $12$ if the signal is warped), the artifacts arising when warping the signal are completely eliminated (see~\cref{fig:warping_atlasLatticePoints}). In addition, the average distance between the original and fitted spectra is substantially lower.
+Therefore, we resort to not warping the signal. Although the optimizer must process more coefficients than if the signal was warped (e.g. if seeding with the Munsell Book of Colors with the sufficiency conditions as in~\cref{ssec:noOfMoments}, $16$ coefficients are on average required for storing spectra, as opposed to $12$ if the signal is warped), the artifacts arising when warping the signal are completely eliminated (see~\cref{fig:warping_atlasLatticePoints}). In addition, the average distance between the original and fitted spectra is substantially lower.
 
 \begin{figure}[t]
 	\centering
@@ -167,7 +166,7 @@ Therefore, we conclude that mirroring, but not warping the signal is the optimal
 		\caption{``foliage'' patch, $c = 12$}
 		\label{fig:resultsWarping_foliage}
 	\end{subfigure}
-	\caption{Comparison between the warped and non-warped reconstructed signal shown on multiple patches of the Munsell Book of Colours}
+	\caption{Comparison between the warped and non-warped reconstructed signal shown on multiple patches of the Munsell Book of Colors}
 	\label{fig:resultsWarping}
 \end{figure}
 
@@ -333,7 +332,7 @@ As we suspected that the failures of the optimizer with lower threshold values w
 
 As the importance of curve samples in terms of proper color reconstruction is mainly placed on their middle (at around 550nm), we attempted to add a heuristic-based weighting factor in an effort to focus on minimizing the distance between the two curve there. However, we did not succeed in improving our results, and we therefore dropped the experiment and examined the optimizer's behavior without weighting the values.
 
-The proposed method substantially outperformed the previous ones. The average error ended up being only about $d = $, and, of yet, no entry requiring $d > $ has been encountered. Therefore, we concluded that the optimal solution to our problem is to set 4 residuals, 3 specifying the RGB difference, and 1 specifying the average distance per sample.
+The proposed method substantially outperformed the previous ones. The threshold error ended up being only about $t = 0.0045$, and, of yet, no entry requiring $d > 0.03$ has been encountered. Therefore, we concluded that the optimal solution to our problem is to set 4 residuals, 3 specifying the RGB difference, and 1 specifying the average distance per sample.
 
 We present some of the results achieved with our cost functions in~\cref{fig:resultsCostFunctions}, where we compare them to fitting with RGB cost functions only. In~\cref{fig:resultsCostFunctions_mcb0725} and~\cref{fig:resultsCostFunctions_darkskin}, we specifically focus on the most problematic spectra with the highest distance $d$ between the atlas lattice point and the atlas entry.
 
@@ -343,207 +342,289 @@ Another drawback of our approach is the substantially greater time complexity, e
 
 However, as the runtime is not the focus of this thesis and as the resulting shapes are satisfactory for the purposes of accurate uplifting, we leave these improvements for future work.
 
-\section{Resulting images}
+\section{Colorimetric properties}
 
-In this section, we present the actual results achieved with our process. The way we do it is that
-we spectrally render an image using a set of spectra (we denote this image the original image), use this spectra as seeds for the cube, we create the cube and then use this cube for uplifting the original rendered image. 
+In the following, we evaluate the accuracy of our technique when used for uplifting constraints and compare its results to the sigmoid-based uplift as defined by~\citet{upsamplingJakobHanika}. We then assess its performance when uplifting the RGB gamut as a whole.
 
-The ideal way to do this
+All the data of color atlases and illuminants used in our experiments is provided by ART~\cite{ART}.
 
-heuristics performance, overall runtime of the cube
+\begin{figure}[ht!]
+	\centering
+	{\sffamily
+		\setlength\tabcolsep{0.0pt}
+		%\renewcommand{\arraystretch}{0.1}
+		\begin{tabular}{ccccccc}
+			&Original& Uplifted & Difference &\quad Original & Uplifted & Difference
+			\vspace{1em} \\ 
+			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
+			&\includegraphics[width=.15\linewidth]{img/results_uplift_page04_originalFL3.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page04_sigmoidFL3.png}
+			& 
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page04_diff_sigmoidFL3.png}
+			&\quad
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page18_originalD65.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page18_sigmoidD65.png}
+			&
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page18_diff_sigmoidD65.png}
+			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page04_originalFL3.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page04_ourFL3.png}
+			& 
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page04_diff_ourFL3.png}
+			&\quad
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page18_originalD65.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page18_ourD65.png}
+			&
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page18_diff_ourD65.png}\\
+			& & Page 4; FL 3 & & & Page 18; D65 & \\
+			\vspace{0.1em} \\ 
+			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
+			&\includegraphics[width=.15\linewidth]{img/results_uplift_page29_originalFL7.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page29_sigmoidFL7.png}
+			& 
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page29_diff_sigmoidFL7.png}
+			&\quad
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page35_originalD50.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page35_sigmoidD50.png}
+			&
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page35_diff_sigmoidD50.png}
+			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page29_originalFL7.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page29_ourFL7.png}
+			& 
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page29_diff_ourFL7.png}
+			&\quad
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page35_originalD50.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page35_ourD50.png}
+			&
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page35_diff_ourD50.png}\\
+			& & Page 29, FL 7 & & & Page 35, D50 & \\
+			\vspace{0.1em} \\ 
+			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
+			&\includegraphics[width=.15\linewidth]{img/results_uplift_page09_originalFL11.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page09_sigmoidFL11.png}
+			& 
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page09_diff_sigmoidFL11.png}
+			&\quad
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page14_originalFL11.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page14_sigmoidFL11.png}
+			&
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page14_diff_sigmoidFL11.png}
+			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page09_originalFL11.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page09_ourFL11.png}
+			&
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page09_diff_ourFL11.png}
+			&\quad
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page14_originalFL11.png}
+			&
+			\includegraphics[width=.15\linewidth]{img/results_uplift_page14_ourFL11.png}
+			&
+			\includegraphics[width=.15\linewidth,height=5.25em]{img/results_uplift_page14_diff_ourFL11.png}\\
+			& & Page 09, FL 11 & & & Page 14, FL 11 & \\
+		\end{tabular}
+	}
+	\caption{Comparison of our uplifting model with the sigmoid-based technique~\cite{upsamplingJakobHanika} for pages of the Munsell Book of Color under different illuminants. Maximum Delta E in the difference images is 3. Note that patches that fall outside sRGB have been omitted.}
+	\label{fig:results_uplift_munsell}
+\end{figure}
 
-TO DO - dorobit v predchadzajucej kapitole ten average a maximum threshold. 
 
+\subsection{Constraint uplifting accuracy}
 
-\begin{figure}[t]
+We tested the accuracy of our proposed constrained uplifting approach on the Munsell Book of Color (MBOC), which we utilized as a constraint set for a $32^3$-sized coefficient cube for the sRGB color space. Of the 1598 entries in the MBOC, 1396 are in the sRGB gamut: therefore, our experiments only included those. If a larger RGB space (such as e.g. Adobe RGB) were used as input space, the full number of atlas entries could be used: working with sRGB was not due to any restrictions in our proposed technique, but only done to stay within the standard RGB space of graphics. Furthermore, in a $32^3$-sized coefficient cube, 82 of the atlas entries can not be used as seeds due to the limitation that only one seed can be present in each voxel. Simply increasing the cube resolution would allow to use the 82 missing entries: again, using a $32^3$ coefficient cube was not done due to any intrinsic restrictions of our technique, but just to save pre-computation time, and stay with a nice power of two as cube dimension.
+
+We compared the difference between the uplifted spectra to the original ones under a spiky, error-prone illuminant via the standard CIE Delta E color difference metric. Specifically, we present the results under the FL11 illuminant, as we determined it to be the illuminant most susceptible to metameric failures (from the ART databse) --- under D65, the error was negligible throughout the whole spectrum.
+
+The average round-trip error was just a Delta E of $0.21$. As the maximum error perceivable by a standard observer is $\Delta E<1$~\cite{maxColorDifference}, this value is negligible and can be regarded as highly satisfactory. Of the 1314 entries, only 22 were found to return a $\Delta E > 1$: all of these were RGB values extremely close to $(0,0,0)$. 
+
+\begin{figure}[t!]
+	\centering
+	\includegraphics[width=0.6\linewidth]{img/seeding_accuracy_legend.png}
+	\includegraphics[width=0.45\linewidth]{img/seeding_accuracy_dark_12coef.png}
+	\includegraphics[width=0.45\linewidth]{img/seeding_accuracy_dark_14coef.png}
+	\caption{Problematic cases of constrained uplifting: reflectance spectra of darker colors. In the areas where the round-trip plot is barely visible, it mimics the original spectrum. Note that the demonstrated range on the y-axis is not $[0,1]$.}
+	\label{fig:seeding_accuracy_dark}
+\end{figure}
+
+An example of this behavior in the dark region of the RGB cube can be observed in~\cref{fig:results_uplift_munsell}. The reason for it is the inadequate fitting of seeded points by the optimizer. This behavior was already present in~\cref{ssec:costFunctions} in~\cref{fig:resultsCostFunctions}, where we concluded that it is due to both the moment representation's inability to flawlessly reconstruct constant curves, and the optimizer's tendency to amplify this deficiency. As the spectral shapes of the dark colors resemble almost constant lines close to zero, it makes sense that the optimiser would primarily fail there.
+
+In~\cref{fig:seeding_accuracy_dark} and~\cref{fig:seeding_accuracy_other}, we provide comparisons of curves of the original spectra, the seeded spectra (labeled \emph{round-trip}, i.e. it represents the direct reconstruction from the moments used to store the original spectra) and the uplifted spectra (i.e. the result of querying the final coefficient cube, including interpolation within the voxel the RGB value lies in). Ideally, all three curves should be identical: a difference between ``original'' and ``round-trip'' points to the deficiency of the moment-based spectral reconstruction, while a difference between ``round-trip'' and ``uplift'' indicates a drawback in the optimizer. We can observe that, while for darker colors (see~\cref{fig:seeding_accuracy_dark}), the errors are mainly due to inadequacies of the optimizer, slight curve deviations for brighter colors (see~\cref{fig:seeding_accuracy_other}) are usually due to imperfections of the moment representation.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.6\linewidth]{img/seeding_accuracy_legend.png}
+	\includegraphics[width=0.45\linewidth]{img/seeding_accuracy_6coef.png}
+	\includegraphics[width=0.45\linewidth]{img/seeding_accuracy_12coef.png}
+	\vspace{0.5em}\\
+	\includegraphics[width=0.45\linewidth]{img/seeding_accuracy_15coef.png}
+	\includegraphics[width=0.45\linewidth]{img/seeding_accuracy_19coef.png}
+	\caption{Accuracy of constrained uplifting demonstrated on examples of input spectra that correspond to saturated RGB colors. In the areas where the round-trip plot is barely visible, it mimics the uplifted spectrum.}
+	\label{fig:seeding_accuracy_other}
+	\vspace{-1em}
+\end{figure}
+
+However, neither of the mentioned deficiencies severely degrade the accuracy of the uplifting system. On the contrary --- in~\cref{fig:results_uplift_munsell}, we can clearly observe our contribution. While the images uplifted with the sigmoid-based cube demonstrate rather significant color errors, our uplifting system performs modestly and is, except for slight, barely visible discrepancies, almost identical to the original spectral render.
+
+Unfortunately, we have encountered issues when testing the accuracy of our system in a conventional spectral renderer (specifically, ART~\cite{ART}). Due to minor color deviations that arise during spectral rendering, the RGB values directly evaluated from the input spectra are not generally equal to the RGB values outputted in the rendered texture. Although the differences are negligible in terms of human color perception, they are high enough to cause the two values to fall into different cube voxels (specifically, to cause the texture RGB to fall into a non-seeded voxel), which in turn results in the insufficient uplift of the texture RGB.
+
+For this reason, in order to demonstrate the correctness of our model on an example scene in~\cref{fig:results_art_scene}, we do not use the spectrally rendered textures but rather our own, manually-created, which perfectly match the desired RGB values. As the method was not tested in other renderers, we attribute the need for such a process to the inaccuracy of ART. 
+
+\begin{figure}[ht]
 	\centering
 	{\sffamily
 		\begin{tabular}{cccc}
 			Spectral render & Sigmoid uplift & Our uplift
 			\vspace{1em} \\
-			\includegraphics[width=.30\linewidth]{img/results_art_page14_originalD65.png}
+			\raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{D65}\\[10pt]}\par}
+			\includegraphics[width=.29\linewidth]{img/results_art_original_d65.png}
 			&
-			\includegraphics[width=.30\linewidth]{img/results_art_page14_sigmoidD65.png}
+			\includegraphics[width=.29\linewidth]{img/results_art_sigmoids_d65.png}
 			& 
-			\includegraphics[width=.30\linewidth]{img/results_art_page14_ourD65.png}
+			\includegraphics[width=.29\linewidth]{img/results_art_constrained_d65.png}
 			\vspace{1em} \\
-			\includegraphics[width=.30\linewidth]{img/results_art_page14_originalFL11.png}
+			\raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{FL12}\\[10pt]}\par}
+			\includegraphics[width=.29\linewidth]{img/results_art_original_fl12.png}
 			&
-			\includegraphics[width=.30\linewidth]{img/results_art_page14_sigmoidFL11.png}
+			\includegraphics[width=.29\linewidth]{img/results_art_sigmoids_fl12.png}
 			&
-			\includegraphics[width=.30\linewidth]{img/results_art_page14_ourFL11.png}
+			\includegraphics[width=.29\linewidth]{img/results_art_constrained_fl12.png}
 		\end{tabular}
 	}
-	\caption{Actually rendered with ART.}
-	\label{fig:results_art_page14}
+	\caption{Comparison of the sigmoid-based uplift to the constrained uplift on a scene rendered in ART~\cite{ART}. Pages in scene are (from the left): 050Y, 050GY, 100Y.}
+	\label{fig:results_art_scene}
 \end{figure}
 
+\subsection{Uplift consistency across RGB Space}
 
-\begin{figure}[t!]
-	\centering
-	{\sffamily
-		\setlength\tabcolsep{0.5pt}
-		\begin{tabular}{ccccccc}
-			&Original& Uplifted & Difference &\quad Original & Uplifted & Difference
-			\vspace{1em} \\ 
-			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
-			&\includegraphics[width=.155\linewidth]{img/results_uplift_page09_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_sigmoidFL11.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_diff_sigmoidFL11.png}
-			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_sigmoidFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_diff_sigmoidFL11.png}
-			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_ourFL11.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page09_diff_ourFL11.png}
-			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_ourFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page10_diff_ourFL11.png}\\
-			& & Page 9 & & & Page 10 & \\
-			\vspace{0.1em} \\ 
-			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
-			&\includegraphics[width=.155\linewidth]{img/results_uplift_page11_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_sigmoidFL11.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_diff_sigmoidFL11.png}
-			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_sigmoidFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_diff_sigmoidFL11.png}
-			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_ourFL11.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page11_diff_ourFL11.png}
-			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_ourFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page12_diff_ourFL11.png}\\
-			& & Page 11 & & & Page 12 & \\
-			\vspace{0.1em} \\ 
-			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
-			&\includegraphics[width=.155\linewidth]{img/results_uplift_page13_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_sigmoidFL11.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_diff_sigmoidFL11.png}
-			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_sigmoidFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_diff_sigmoidFL11.png}
-			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_ourFL11.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page13_diff_ourFL11.png}
-			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_originalFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_ourFL11.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page14_diff_ourFL11.png}\\
-			& & Page 13 & & & Page 14 & \\
-		\end{tabular}
-	}
-	\caption{The comparison of the green pages uplift}
-	\label{fig:results_uplift_munsell_green_pages}
-\end{figure}
+In order to assess how our technique uplifts the entire RGB gamut (and not just the regions around the seeds), we created multiple coefficient cubes that were seeded with different color atlases. This included a non-constrained cube, i.e. a cube fitted from the middle point at $\mathrm{RGB}(0.5,0.5,0.5)$ in the same manner as the sigmoid-based approach by Jakob and Hanika~\cite{upsamplingJakobHanika}). 
 
-
- As the variance in the RGB value of the resulting image map is inevitable due to the stochastic nature of the spectral rendering process, - navyse daco s tymto spravit
-
+We first compared their performance in terms of color reconstruction upon uplifting a gradient texture. We specifically selected a gradient with saturated colors in the red-yellow-green region, as that is where differences are most perceivable. The results are shown in~\cref{fig:colorimetric_properties}, again illuminated by CIE FL11 (under D65, there are, as per the fitting process, practically zero differences). While the distinctions between individual uplifts under FL11 are barely perceivable by the human eye, the difference images demonstrate that there are some variations -- mainly around the locations of seed points, which is precisely what is intended by constraining the uplift process in these locations. None of the gradient textures exhibit any visible discontinuities, though, which indicates that our interpolation approach works properly in the presence of multiple metameric families of reflectance spectra.
 
 \begin{figure}[t]
 	\centering
 	{\sffamily
-		\setlength\tabcolsep{0.5pt}
-		\begin{tabular}{ccccccc}
-			&Original& Uplifted & Difference &\quad Original & Uplifted & Difference
+		\setlength\tabcolsep{1.5pt}
+		\begin{tabular}{ccccc}
+			&\makecell{Uplifted\\with\\sigmoids}&\quad \makecell{Munsell Book\\of\\Colors}& \quad
+			\makecell{\\None\\}&\quad \makecell{Pantone\\Color\\System}
 			\vspace{1em} \\ 
-			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
-			&\includegraphics[width=.155\linewidth]{img/results_uplift_page04_originalFL3.png}
+			\raisebox{1.5em}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Uplift}\\[18pt]}\par}
 			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_sigmoidFL3.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_diff_sigmoidFL3.png}
 			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_originalD65.png}
+			\includegraphics[width=.20\linewidth]{img/gradient_uplift_mbc.png}
+			& \quad
+			\includegraphics[width=.20\linewidth]{img/gradient_uplift_middle.png}
+			& \quad
+			\includegraphics[width=.20\linewidth]{img/gradient_uplift_pantone.png}
+			\\ \raisebox{1.5em}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Difference}\\[18pt]}\par}
 			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_sigmoidD65.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_diff_sigmoidD65.png}
-			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_originalFL3.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_ourFL3.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page04_diff_ourFL3.png}
-			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_originalD65.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_ourD65.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page18_diff_ourD65.png}\\
-			& & Page 4; FL 3 & & & Page 18; D65 & \\
-			\vspace{0.1em} \\ 
-			\raisebox{0.4cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Sigmoid}\\[20pt]}\par}
-			&\includegraphics[width=.155\linewidth]{img/results_uplift_page29_originalFL7.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_sigmoidFL7.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_diff_sigmoidFL7.png}
-			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_originalD50.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_sigmoidD50.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_diff_sigmoidD50.png}
-			\\ \raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{Our}\\[20pt]}\par}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_originalFL7.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_ourFL7.png}
-			& 
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page29_diff_ourFL7.png}
-			&\quad
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_originalD50.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_ourD50.png}
-			&
-			\includegraphics[width=.155\linewidth]{img/results_uplift_page35_diff_ourD50.png}\\
-			& & Page 29, FL 7 & & & Page 35, D50 & \\
+			\includegraphics[width=.20\linewidth]{img/gradient_uplift_sigmoid.png}
+			& \quad
+			\includegraphics[width=.20\linewidth, height=7em]{img/gradient_diff_mbc.png}
+			& \quad
+			\includegraphics[width=.20\linewidth, height=7em]{img/gradient_diff_middle.png}
+			& \quad
+			\includegraphics[width=.20\linewidth, height=7em]{img/gradient_diff_pantone.png}\\
 		\end{tabular}
 	}
-	\caption{Comparison of other pages}
-	\label{fig:results_uplift_munsell_other}
+	\caption{A region of the RGB gamut uplifted with different sets of initial spectra, illuminated by FL11. The difference images are relative to maximum $\Delta E = 2$.}
+	\label{fig:colorimetric_properties}
+	\vspace{-1em}
 \end{figure}
 
-- which technique gives the best results (metamerism results)
+In~\cref{fig:uplift_colourful_texture}, we demonstrate that our approach can properly uplift large regions of the RGB gamut simultaneously, without showing artifacts under varying illuminations. We provide multiple uplifts of a rainbow texture covering most of the RGB gamut, constrained with different constraint sets under various illuminants. Although a significant subset of voxels has been seeded, some of them with spiky spectra (especially for the Pantone color atlas), none of these renderings exhibits significant artifacts. Note that all uplifts were performed with $32^3$-sized cubes, i.e. some of the constraints may not have been utilized due to collisions during seeding.
 
-\section{Future work}
+\begin{figure}[ht]
+	\centering
+	{\sffamily
+		\setlength\tabcolsep{1.5pt}
+		\begin{tabular}{cccc}
+			\makecell{Original\\D65} & \makecell{MBOC\\D50} & \makecell{Pantone\\FL5} &\makecell{RAL\\FL12}
+			\vspace{0.5em}\\ 
+			\includegraphics[width=.22\linewidth]{img/gradient_complete.jpg}
+			&
+			\includegraphics[width=.22\linewidth]{img/gradient_complete_mbcD50.jpg}
+			& 
+			\includegraphics[width=.22\linewidth]{img/gradient_complete_pantoneFL5.jpg}
+			& 
+			\includegraphics[width=.22\linewidth]{img/gradient_complete_ralFL12.jpg} \vspace{0.5em}\\
+			\makecell{Pantone\\D75}& \makecell{None\\FL9} & \makecell{RAL\\FL7}  & \makecell{MCC SG\\FL3}
+			\vspace{0.3em}\\
+			\includegraphics[width=.22\linewidth]{img/gradient_complete_pantoneD75.jpg}
+			&
+			\includegraphics[width=.22\linewidth]{img/gradient_complete_noneFL9.jpg}
+			& 
+			\includegraphics[width=.22\linewidth]{img/gradient_complete_ralFL7.jpg}
+			& 
+			\includegraphics[width=.22\linewidth]{img/gradient_complete_mccSGFL3.jpg}\\
+		\end{tabular}
+	}
+	\caption{Constrained spectral uplifting of a colorful texture for various constraint sets under different illuminants.}
+	\label{fig:uplift_colourful_texture}
+	\vspace{-1em}
+\end{figure}
 
-Also mention that it is multi-threaded and performance is not really a priority - the cube has to be created only once and then can be reused as much as the artists need.
+
+\section{Performance and future work}
+
+In this section, we evaluate the performance of our method in terms of both memory and execution time, and propose possible future work for their improvement.
+
+\subsection{Memory usage}
+The memory necessary for storing our cube depends on its resolution (i.e. the number of lattice points), which is, in turn, dependent on both the size of our constraint set and on the position of its spectra within the RGB cube. The Macbeth Color Checker (MCC), which contains only 24 entries that are spaced quite far apart from each other in the RGB space (with one of them falling outside of sRGB), requires as little as a $13^3$-sized cube. Due to the close proximity of some seeds, the 1396 sRGB entries of the Munsell Book of Color would require as much as 340 lattice points per axis for all seeds to fall into a unique voxel. Additionally, due to the rigid nature of an evenly spaced voxel grid, using a higher cube dimension does not necessarily imply more points that can be successfully seeded. Due to voxel edges being in different positions for different cube dimensions, increasing cube size might even have an adverse effect --- for example, while a cube of size $90^3$ is sufficient for the RAL Design atlas, in a $300^3$-sized cube, 1 point remains unfitted due to a voxel collision.
+
+To store the coefficients of cube entries, we require 3 floating point values for all non-seeded points, and, on average, 16 floating point values per constraint. For the $340^3$-sized cube required for the proper coverage of the Munsell Book of Color, this would yield a size of over $450.35$MB. Although using less coefficients for storing constraints is possible, it would not noticeably improve the size of the cube --- even if we were to use 3 coefficients for all coefficient representations within the cube, the overall size would still be over $449.8$MB. That is a negligible improvement, as the overall size remains excessive --- after all, a seeding of the whole Munsell Book of Color requires only $1396$ voxels, which sums up to a maximum of $8\cdot1396$ lattice points. Additionally, while most of the regions of the cube are barely utilized, there exist some that have all of their voxels fitted, which might result in a lack of smooth color transitions within these regions.
+
+We therefore conclude that, for the purposes of constrained spectral uplifting for large sets of user-supplied target spectra (like e.g. entire color atlases), a coefficient cube with evenly spaced lattice points is distinctly sub-optimal, in terms of both the memory requirements and its resulting colorimetric properties. For future work, we suggest utilizing a dynamic structure capable of splitting the RGB space into variably-sized voxels according to the number of constraints, such as a kD-tree or an octree.
+
+\subsection{Execution time}
+
+Since our uplifting model is created prior to the rendering process, we divide the evaluation of the execution time into two parts --- the cube fitting process, and the rendering speed when utilizing our cube for uplifting purposes.
+
+We test the execution time of cube fitting on multiple sets of constraints in forms of color atlases, and present the results in~\cref{fig:evaluation_cube_fitting}, where we distinguish the \emph{seeding time} (i.e. the time spent on seeding and fitting of the atlas lattice points) and the \emph{fitting time} (i.e. the time spent on fitting the rest of the cube, i.e. the regular lattice points). All the experiments are performed on an Intel Core i7-8750H CPU (12 logical cores), and the size of each cube is $32^3$. Note that such cube resolution may be insufficient for the utilization of all constraints in a given atlas --- we therefore provide the \emph{seed count}, which represents the overall number of moment representations stored at atlas lattice points.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{ lrrrr } 
+		\hline
+		\noalign{\vskip 0.3em}   
+		\makecell{Color\\atlas} & \makecell{Seed\\count} & \makecell{Seeding\\time} & \makecell{Fitting\\time} & Overall \vspace{0.3em} \\
+		\hline
+		\noalign{\vskip 0.3em}   
+		Munsell Book of Color& 10512 		&7h 32m 18s&6m 59s &7h 39m 17s\\ 
+		RAL Design Atlas & 1336		&43m 11s&9m 15s &52m 26s\\ 
+		Macbeth Color Chart SG	& 576	&27m 14s&8m 8s  &35m 22s\\ 
+		Macbeth Color Chart& 184 		&9m 29s &14m 17s&23m 46s\\ 
+		None & 1 		&0.08s&45m 5s &45m 6s\\
+		Sigmoid-based approach	&1 &0s&7m 16s &7m 16s\\
+		\hline
+	\end{tabular}
+	\caption{Fitting time of a $32^3$-sized coefficient cube for multiple color atlases.}
+	\label{fig:evaluation_cube_fitting}
+	\vspace{-1em}
+\end{table}
+
+Due to the higher coefficient count and the strict requirements placed upon the shapes of the reconstructed spectral curves, the fitting of the atlas lattice points takes a lot longer than the fitting of the latter (on average, an atlas lattice point point takes $2.4$ seconds to fit, in comparison to the $0.03$ for regular lattice points). However, as the cube fitting process is multi-threaded, it benefits from multiple seeds evenly positioned across the RGB cube. This is particularly obvious when comparing the performance of the fitting of the Macbeth Color Charts and the fitting without constraints.
+
+None of these usage cases outperform the sigmoid-based cube in terms of fitting time. While our technique needs to use various complex mathematical operations, such as the application of Levinson's algorithm, Herglotz transform and multiple other conversion processes~\cite{trigonometricMomentsPaper}, not to mention the interpolation of metamers for lattice points with multiple representations, the sigmoid-based approach evaluates the spectral curve with as little as six floating point operations for any given wavelength~\cite{upsamplingJakobHanika}.
+
+This drawback of our technique also carries over to using our method during rendering. In order to properly evaluate the execution time, we perform two tests --- firstly, we compare the performance of the sigmoid-based cube with the performance of our non-constrained cube (in order to avoid the overhead of spectral reconstruction from higher-dimensional coefficient representations), and secondly, we provide measures of the execution time of the constrained uplift of the renders in~\cref{fig:results_uplift_munsell}. All experiments are performed on an Intel Xeon CPU E5-2680 v3 (48 logical cores), with $32^3$-sized cubes.
+
+For the latter experiments, the sigmoid-based approach performed, on average, $2.1$ times better than our constrained cubes. The performance overhead arising from constraining the uplifting process was expected. When used in a spectral renderer -- specifically, ART~\cite{ART} --- on a closely viewed texture of one of the pages of the Munsell Book of Color (that is, when pretty much all the pixels in the image correspond to the constraints), rendering times slow down by about a factor of $4$ when compared to the sigmoid uplift.
+
+For non-constrained uplifting, our method provides no benefits compared to the sigmoid-based approach, except perhaps that it creates slightly more varied spectral shapes than the plain sigmoid technique. Even when not constrained, uplifting of the colorful textures shown in~\cref{fig:uplift_colourful_texture} is $2.3$ times slower with our cube than with the sigmoid-based technique.
+
+That having been said, we wish to point out that so far, our focus was placed on the correctness and accuracy of the constrained uplift, i.e. our implementation of both the model creation and its utilization in a renderer does not include any real optimizations yet. In the future, these could be applied to the fitting process (by further exploiting the possibilities of the CERES solver, or, possibly, another optimization technique) and to the actual uplifting, which currently does not cache any intermediate values (such as the exponential moments) and therefore requires them to be unnecessarily re-computed during each uplift. We estimate that such optimizations could improve the performance up to a factor of two, both during fitting, and during rendering.
