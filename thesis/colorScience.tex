@@ -2,11 +2,11 @@
 
 Color science, or colorimetry, is a branch of science that concerns itself with human perception of color. It researches the relations between human vision and physical properties of color, and analyzes options for both its capturing and reconstruction.
 
-We begin this chapter by describing the physical properties of light and their subsequent meaning in terms of color. We then provide multiple options for quantifying said color for further possible reconstruction in the digital world. Lastly, we show the importance of color representation in modern-day renderers, and its effects of physically based phenomena.
+We begin this chapter by describing the physical properties of light and their subsequent meaning in terms of color. We then provide multiple options for quantifying said color for further possible reconstruction in the digital world. Lastly, we show the importance of color representation in modern-day renderers, and its effects on reconstruction of physically based phenomena.
 
 \section{Light and Color}
 
-Human visual perception refers the ability of the human eye to interpret the surrounding environment. It is based on our capability to detect \emph{electromagnetic radiation}, which is a form of energy that consists of waves which propagate through space and transmit radiant energy.
+The term \emph{human visual perception} refers to the ability of the human eye to interpret the surrounding environment. It is based on our capability to detect \emph{electromagnetic radiation}, which is a form of energy that consists of waves which propagate through space and transmit radiant energy.
 
 An \emph{electromagnetic wave} is characterized by its \emph{amplitude} and \emph{frequency}. Amplitude is defined as the distance between the central axis and either the \emph{crest} (the highest point of the wave) or the \emph{trough} (the lowest point of the wave), while frequency specifies how many wave cycles occur in a second. Together, these properties give rise to the term \emph{wavelength}, denoted $\lambda$, which measures the length of the wave --- the distance between either two subsequent crests, troughs or any two following spots with the same height. 
 
@@ -14,7 +14,7 @@ Every electromagnetic wave can be unambiguously defined by its wavelength. Arran
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width=0.8\linewidth]{img/electromagnetic_spectrum.png}
+	\includegraphics[width=0.9\linewidth]{img/electromagnetic_spectrum.png}
 	\caption{An illustration of the electromagnetic spectrum~\cite{electromagneticSpectrum}} \label{fig:electromagneticSpectrum}
 \end{figure}
 
@@ -22,13 +22,13 @@ In this thesis, we focus on \emph{visible light}, which covers only a mere fract
 
 To sum up, electromagnetic waves specify the way in which light travels. To, however, describe the interaction between light and matter, the term \emph{photon} is used.
 
-Photons are elementary particles of light moving in a manner specified by their wavelengths. They make up electromagnetic radiation and can be emitted or absorbed by atoms and molecules. During this process, they transfer energy either from the object that emitted them or to the object that absorbed them. This change in energy (denoted $E$) is proportional to the wave frequency of the absorbed/emitted photon and can be computed as follows~\citep{planckConstant}: 
+Photons are elementary particles of light moving in a manner specified by their wavelengths. They make up electromagnetic radiation and can be emitted or absorbed by atoms and molecules. During this process, they transfer energy either from the object that emitted them or to the object that absorbed them. This change in energy (denoted $E$) is proportional to the wave frequency of the absorbed/emitted photon and can be computed as follows~\cite{planckConstant}: 
 \begin{equation} \label{energyEquation}
-E = hf = \dfrac{hc}{\lambda}
+E = hf = \dfrac{hc}{\lambda},
 \end{equation}
-where $h$ is Planck's constant, $f$ is the frequency and $c$ is the speed of light. Therefore, generally speaking, the human eye identifies light when atoms and molecules in the retina absorb photons. 
+where $h$ is the Planck's constant, $f$ is the wave frequency and $c$ is the speed of light. Therefore, generally speaking, the human eye identifies light when atoms and molecules in the retina absorb photons. 
 
-To specify this process, we will first describe the retina. The retina consists of millions of light-sensitive cells, also called \emph{photoreceptors}, which pass a visual signal via an optic nerve to the brain, giving the notion of light and color. There are two types of photoreceptors in the human eye --- rods and cones.
+To specify this process, we first describe the retina. The retina consists of millions of light-sensitive cells, also called \emph{photoreceptors}, which pass a visual signal via an optic nerve to the brain, giving the notion of light and color. There are two types of photoreceptors in the human eye --- rods and cones.
 
 \emph{Rods} make up most of the receptor cells (around 91 million according to~\citet{rods91cones4f5}, but other sources state that their number could be as high as 125 million~\cite{rods125cones6}). They are usually located around the boundary of the retina, and are responsible for low light (\emph{scotopic}) vision. However, they possess very little notion of color, which is also the reason why the human eye has trouble recognizing colors during the night.
 
@@ -36,9 +36,9 @@ To specify this process, we will first describe the retina. The retina consists 
 
 The human eye has three types of cones:
 \begin{itemize}
-	\item \emph{L-cones}, which are the most responsive to longer wavelengths at around 560nm. When stimulated, they correspond to the red color
-	\item \emph{M-cones}, which are the most sensitive to medium wavelengths at around 530nm and correspond to green color
-	\item \emph{S-cones}, which respond the most to small wavelengths that peak at around 420nm and correspond to blue color
+	\item \emph{L-cones}, which are the most responsive to longer wavelengths at around 560nm. When stimulated, they correspond to the red color.
+	\item \emph{M-cones}, which are the most sensitive to medium wavelengths at around 530nm and correspond to green color.
+	\item \emph{S-cones}, which respond the most to small wavelengths that peak at around 420nm and correspond to blue color.
 \end{itemize}
 
 Their relative response to stimulation can be seen in~\cref{fig:coneSensitivity}.
@@ -50,51 +50,51 @@ Their relative response to stimulation can be seen in~\cref{fig:coneSensitivity}
 
 This type of color perception is called \emph{trichromatic}, as it uses three types of receptors to create the whole color space. The attempts to simulate such perception in the digital world give rise to tristimulus color representations, which have been widely adapted in color science. We discuss these thoroughly in~\cref{sec:colorRepresentation}.
 
-Up until now, we have been talking about the interaction of light with the human eye. Photons, however, also interact with objects. As established by the relationship defined in~\cref{energyEquation}, the energy transferred to an object upon light interaction is dependent on the photon wavelength. This means that objects might absorb some wavelengths and reflect others.
+Up until now, we have discussed the interaction of light with the human eye. Photons, however, also interact with objects. As established by the relationship defined in~\cref{energyEquation}, the energy transferred to an object upon light interaction is dependent on the photon wavelength. This means that objects might absorb some wavelengths and reflect others.
 
 Object color is defined by the wavelengths it \emph{reflects}. For example, if it reflects all the wavelengths, the resulting color is white, while absorbing all the wavelengths would render the object black. Naturally, human perception of object color is not only dependent on its reflective properties, but also on the lighting of the scene. If the only present light is red, wavelengths corresponding to colors other than red never hit the object. Therefore, the object might reflect only a subset of wavelengths than it would under white light, which may subsequently result in a change of the perceived color.
 
 \section{Color representation} \label{sec:colorRepresentation}
 
-The question of how to discretely represent color has been posed ever since the introduction of the first graphical user interface. For use in computer science, representations are required to be compact, precise, and the operations on colors to be easily executed.
+The question of how to discretely represent color has been posed ever since the introduction of the first graphical user interface. For use in computer science, representations are required to be compact, precise, and the operations on colors are required to be simple and easily executed.
 
-We have already briefly mentioned the tristimulus representation in the previous section. In this section, we will overview its basic properties and describe some of the most popular tristimulus systems. We will also talk about an alternative representation, based primarily on the physical properties of color --- the spectral representation.
+We have already briefly mentioned the tristimulus representation in the previous section. In this section, we overview its basic properties and describe some of the most popular tristimulus systems. We also talk about an alternative representation, based primarily on the physical properties of color --- the spectral representation.
 
 \subsection{Spectral representation}
 
 When defining the color of an object, we must not only specify the wavelengths it reflects, but also the ratio between the incoming and the outgoing energy at these wavelengths. The dependency of reflectance on the wavelength is called a \emph{reflectance spectrum}, and is usually a smooth, continuous curve (see example in~\cref{fig:spectralRepres_reflectance}).
 
-Although this definition might be sufficient for reflective surfaces, describing the color emitted by a light source requires the knowledge of the source's power rather than reflectance. For these purposes, \emph{spectral power distribution} (SPD) is used. Generally, SPD is a function describing the relationship between wavelength and any radiometric or photometric quantity (radiant energy, luminance, luminous flux, irradiance et cetera\ldots). In this thesis, however, we use SPD to describe the emissive properties of light sources, and therefore consider SPD to be a function of wavelength and power. We provide an example of an emission spectrum in~\cref{fig:spectralRepres_illuminant}.
+Although this definition might be sufficient for reflective surfaces, describing the color emitted by a light source requires the knowledge of the source's power rather than reflectance. For these purposes, \emph{spectral power distribution} (SPD) is used. Generally, SPD is a function describing the relationship between wavelength and any radiometric or photometric quantity (radiant energy, luminance, luminous flux, irradiance, etc\ldots). In this thesis, however, we use SPD to describe the emissive properties of light sources, and therefore consider SPD to be a function of wavelength and power. We provide an example of an emission spectrum in~\cref{fig:spectralRepres_illuminant}.
 
 \begin{figure}[t]
 	\centering
 	\begin{subfigure}[t]{0.31\textwidth}	
 		\captionsetup{justification=centering}
 		\includegraphics[width=\linewidth]{img/spectralRepres_reflectance.png}
-		\caption{Reflectance spectrum (``orange yellow'' patch of Macbeth Color Chart)}
+		\caption{Reflectance spectrum}
 		\label{fig:spectralRepres_reflectance}
 	\end{subfigure}
 	\begin{subfigure}[t]{0.31\textwidth}
 	\captionsetup{justification=centering}
 	\includegraphics[width=\linewidth]{img/spectralRepres_emission.png}
-	\caption{Emission spectrum (D50 illuminant) }
+	\caption{Emission spectrum}
 	\label{fig:spectralRepres_illuminant}
 	\end{subfigure}
 	\begin{subfigure}[t]{0.31\textwidth}
 	\captionsetup{justification=centering}
 	\includegraphics[width=\linewidth]{img/spectralRepres_combination.png}
-	\caption{``orange yellow'' patch of Macbeth Color Chart illuminated by D50}
+	\caption{Combination}
 	\label{fig:spectralRepres_combination}
 	\end{subfigure}
-	\caption{The behavior of a reflectance of a surface under an illuminant}
+	\caption{The behavior of a reflectance of a material under an illuminant specified by an emission spectrum}
 	\label{fig:spectralRepresExamples}
 \end{figure}
 
-The color of an object illuminated by a light source can be determined by multiplying the light source's SPD curve with the reflectance curve of the object, as shown in an example in~\cref{fig:spectralRepresExamples}. This way the physical properties of color are preserved and the results are the same as they would be in nature.
+As the reflectance spectrum serves as a throughput for the emission spectrum, the color of an object illuminated by a light source can be determined by multiplying the light source's SPD curve with the reflectance curve of the object, as shown in an example in~\cref{fig:spectralRepresExamples}. This way the physical properties of color are preserved and the results are the same as they would be in nature.
 
 \subsection{Tristimulus representation} \label{ssec:tristimulusRepres}
 
-The obvious drawback of spectral representation is the difficulty of its discretization, since there is an infinite number of possible spectral curves, but only a finite number of digital colors that can be displayed by a monitor. For the purposes of color visualization, a distinct, by nature discrete, color
+The obvious drawback of the spectral representation is the difficulty of its discretization, since there is an infinite number of possible spectral curves, but only a finite number of digital colors that can be displayed by a monitor. For the purposes of color visualization, a distinct, by nature discrete, color
 representation is required. 
 
 Tristimulus representation approaches this issue by saving the color as a set of three values. Although the original idea was to simulate the trichromatic perception of human eye (i.e. save values that specify how much have the red, green and blue cones been stimulated), over time, multiple other tristimulus color spaces have been created. They differ mostly in the range of colors they are capable of representing and in their practical use. Following, we provide an overview of some of the most popular ones.
@@ -102,9 +102,9 @@ Tristimulus representation approaches this issue by saving the color as a set of
 \subsubsection{RGB color space}
 The RGB color space is an additive space employing three primaries --- red, green and blue. In other words, if three lights with red, green and blue chromacities are used to illuminate a single point, any color within the RGB color space can be created solely by changing the lights' intensities. 
 
-An RGB value can therefore be thought of as a point in a 3-dimensional Euclidean space with each of the coordinate axes representing one of the primaries. As the lights' intensities must be bounded, this space is narrowed down to a cube starting at the base of the coordinate system. Usually, the range for each value is defined within 0 and 255, but a normalized (0,1) range is also used.
+An RGB value can therefore be thought of as a point in a 3-dimensional Euclidean space with each of the coordinate axes representing one of the primaries. As the lights' intensities must be bounded, this space is narrowed down to a cube starting at the base of the coordinate system. Usually, the range for each value is defined within 0 and 255, but a normalized $[0,1]$ range is also used.
 
-Various implementations of the RGB color space exist. They differ in the specifications of the RGB primaries, and therefore in their \emph{color gamut}, which is the subset of colors they are capable of representing. Some examples (named in ascending order with respect to their color gamut) include ISO RGB, sRGB, Adobe RGB, Adobe Wide Gamut RGB and ProPhoto RGB. An illustrative comparison of the sRGB and Adobe RGB gamut in the chromaticity diagram (described thoroughly in~\cref{sssect:xyYcolorSpace}) can be seen in~\cref{fig:chromaticityDiagram}.
+Various implementations of the RGB color space exist. They differ in the specifications of the RGB primaries, and therefore in their \emph{color gamut}, which is the subset of colors they are capable of representing. Some examples (named in ascending order with respect to the size of their color gamut) include ISO RGB, sRGB, Adobe RGB, Adobe Wide Gamut RGB and ProPhoto RGB. An illustrative comparison of the sRGB and Adobe RGB gamut in the chromaticity diagram (described thoroughly in~\cref{sssect:xyYcolorSpace}) can be seen in~\cref{fig:chromaticityDiagram}.
 
 RGB color spaces are commonly used in everyday world, e.g. in LCD and LED displays, digital cameras, scanners and even in computer graphics rendering. Their main downside has, however, been discovered when designing color matching functions~\cite{colorMatchingDerivation}.
 
@@ -120,7 +120,7 @@ A \emph{color matching function} is a function designed to simulate the response
 	\quad
 	\begin{subfigure}{0.46\textwidth}
 		\includegraphics[width=\linewidth]{img/matching_functions_xyz.png}
-		\caption{$\overline{x}(\lambda)$, $\overline{y}(\lambda)$ and $\overline{z}(\lambda)$ functions according to their spectral data from~\citet{colorMatchingXYZData}}
+		\caption{$\overline{x}(\lambda)$, $\overline{y}(\lambda)$ and $\overline{z}(\lambda)$ functions plotted with data by~\citet{colorMatchingXYZData}}
 		\label{fig:colorMatchingXYZ}
 	\end{subfigure}
 	\caption{Color matching functions}
@@ -139,7 +139,7 @@ The XYZ color space is a hypothetical color space capable of encompassing all co
 \end{equation}
 where $X$, $Y$ and $Z$ are the resulting tristimulus values and $P(\lambda)$ is the spectral power distribution.
 
-Although the X, Y and Z primaries were designed so that the Y primary closely matches luminance and X and Z primaries give color information, they are only imaginary, i.e. they do not correspond to any spectral distribution of wavelengths. This property renders the whole XYZ space imaginary, which means that it cannot be used for visualization purposes. Its main function is to serve as a ``middle step'' when performing a conversion from SPD to an arbitrary tristimulus space, which eliminates the need for creating color matching functions for other spaces. The conversion from XYZ into a tristimulus space can then be performed by a simple space-specific $3x3$ matrix transformation.
+Although the X, Y and Z primaries were designed so that the Y primary closely matches luminance and X and Z primaries give color information, they are only imaginary, i.e. they do not correspond to any spectral distribution of wavelengths. This property renders the whole XYZ space imaginary, which means that it cannot be used for visualization purposes. Its main function is to serve as a ``middle step'' when performing a conversion from SPD to an arbitrary tristimulus space, which eliminates the need for creating color matching functions for other tristimulus spaces. The conversion from XYZ to an arbitrary tristimulus space can then be performed by a simple space-specific $3x3$ matrix transformation.
 
 \subsubsection{xyY color space} \label{sssect:xyYcolorSpace}
 
@@ -155,7 +155,7 @@ The conversion from the XYZ to the xyY color space is performed as follows --- f
 \end{equation}
 Since $x+y+z=1$, the $z$ term can be expressed as $z=1-x-y$. This means that $z$ does not give us any additional information about the current color and therefore can be dropped from the representation. It also implies that some information has been lost during the conversion, i.e. we cannot reconstruct the original XYZ triplet using only the $x$ and $y$ values and therefore cannot obtain the initial color. At least one of the original values is needed for this purpose ---~\citet{CIE} decided to use the $Y$ component, as it already specifies luminance.
 
-Plotting the values of the $x$ and $y$ chromaticity coordinates creates a \emph{chromaticity diagram}, shown in~\cref{fig:chromaticityDiagram}. Each point of the curved boundary line (which is also called the \emph{spectral locus}) corresponds to a XYZ value that is the result of a monochromatic radiation (i.e. a single-wavelength stimulus). All other chromaticities visible to the standard observer lie within a region bounded by the spectral locus.
+Plotting the values of the $x$ and $y$ chromaticity coordinates creates a \emph{chromaticity diagram}, shown in~\cref{fig:chromaticityDiagram}. Each point of the curved boundary line (also called the \emph{spectral locus}) corresponds to an XYZ value that is the result of a monochromatic radiation (i.e. a single-wavelength stimulus). All other chromaticities visible to the standard observer lie within a region bounded by the spectral locus.
 
 \begin{figure}[t!]
 	\centering
@@ -166,45 +166,45 @@ Plotting the values of the $x$ and $y$ chromaticity coordinates creates a \emph{
 
 \subsubsection{L*a*b*}
 
-Although some of the color spaces we have mentioned so far are already a lot more intuitive in terms of human color perception (e.g. xyY), neither of them regards for the human perception of color differences. The human eye is, for example, more prone to spotting differences when comparing lighter pastel colors and neglecting them upon interaction with darker color (e.g. dark blue). If we wish to accurately describe color differences in a color space, we must regard for this factor and aim for \emph{perceptual uniformity}, i.e. for the difference between two colors (as perceived by the human eye) to be proportional to their Euclidean distance within the color space.
+Although some of the color spaces mentioned so far are already quite intuitive in terms of human color perception (e.g. xyY), neither of them regards for the human perception of color differences. The human eye is, for example, more prone to spotting differences when comparing lighter pastel colors and neglecting them upon interaction with darker color (e.g. dark blue). If we wish to accurately describe color differences in a color space, we must regard for this factor and aim for \emph{perceptual uniformity}, i.e. for the difference between two colors (as perceived by the human eye) to be proportional to their Euclidean distance within the color space.
 
-The Hunter's Lab color space~\cite{hunterLabCIELabComparison} addressed this issue and was designed so that the distance between its two triplets characterized roughly how different they are in chromaticity and luminance. It is based on the Opponent color theory~\cite{opponentColorTheory}, which suggests that the cones in the human eye are linked together in opposing pairs and that the visual system records the \emph{difference} between the stimulation of the pairs rather than the cones' individual responses.
+The Hunter's Lab color space~\cite{hunterLabCIELabComparison} addresses this issue and is designed so that the distance between its two triplets characterizes roughly how different they are in chromaticity and luminance. It is based on the Opponent color theory~\cite{opponentColorTheory}, which suggests that the cones in the human eye are linked together in opposing pairs and that the visual system records the \emph{difference} between the stimulation of the pairs rather than the cones' individual responses.
 
-As the Hunter's Lab color space does not achieve perfect uniform spacing of values, CIE \emph{L*a*b*} color space (CIELAB) has been proposed in an attempt to improve some of its shortcomings and is now more widely used. However, neither of the systems are completely accurate in terms of perceptual uniformity~\cite{hunterLabCIELabComparison}.
+As the Hunter's Lab color space does not achieve perfect uniform spacing of values, CIE \emph{L*a*b*} color space (CIELAB)~\cite{labColorScale} has been proposed in an attempt to improve some of its shortcomings and is now more widely used. However, neither of the systems are completely accurate in terms of perceptual uniformity~\cite{hunterLabCIELabComparison}.
 
 The three opponent channels used to specify color in the CIE L*a*b* color space are defined as follows~\cite{labColorScale}:
 \begin{itemize}
-	\item \emph{L*} --- indicates lightness, i.e. the difference between \emph{light} and \emph{dark}. Its values range from $0$ (yielding black color) to $100$ (indicating diffuse white color)~\cite{labColorScale}.
+	\item \emph{L*} --- indicates lightness, i.e. the difference between \emph{light} and \emph{dark}. Its values range from $0$ (yielding black color) to $100$ (indicating diffuse white color).
 	\item \emph{a*} --- defines the difference between \emph{green} and \emph{red}. Positives values of this component indicate the object's color to be more green, while negative values signify the domination of red.
 	\item \emph{b*} --- defines the difference between \emph{yellow} and \emph{blue}. Positive values indicate the object to be more yellow, while negative values indicate the domination of blue.
 \end{itemize}
 Neither the range of the a* nor the b* component has any specific numerical limits~\cite{labColorScale}.
 
-The L*a*b* color space is a \emph{reference system} --- an abstract, non-intuitive space encompassing all the human perceptible colors. Due to its perceptual uniformity, it can be used for color balance corrections by modifying the a* and b* components, and for lightness adjustments by modifying the L* component. However, as mentioned earlier, its main purpose is the determining of \emph{color differences}.
+The L*a*b* color space is a \emph{reference system} --- an abstract, non-intuitive space encompassing all human-perceptible colors. Due to its perceptual uniformity, it can be used for color balance corrections by modifying the a* and b* components, and for lightness adjustments by modifying the L* component. However, as mentioned earlier, its main purpose is the determining of \emph{color differences}.
 
-In 1976, CIE introduced the concept of \emph{Delta E}, which is the measure of change in visual perception of two colors~\cite{deltaEOverview}. Denoted $\Delta E_{ab}^*$, it is computed as an Euclidean distance between the two sample points, i.e.:
+In 1976, CIE introduced the concept of \emph{Delta E}, which is the measure of change in visual perception of two colors~\cite{deltaEOverview}. Denoted $\Delta E_{ab}^*$, it is computed as an Euclidean distance between two sample points, i.e.:
 \begin{equation} \label{deltaE}
 \Delta E_{ab}^*=\sqrt{(L_{2}^* - L_{1}^*)^2 + (a_{2}^* - a_{1}^*)^2 + (b_{2}^* - b_{1}^*)^2},
 \end{equation}
 where $(L_{1}^*,a_{1}^*,b_{1}^*)$ and $(L_{2}^*,a_{2}^*,b_{2}^*)$ are the L*a*b* coordinates of the sample points.
 
-However, the $\Delta E_{ab}^*$ error is prone to exaggerate the differences occurring when comparing two highly saturated colors of similar hue. This is due to the fact that the L*a*b* color space is not perfectly perceptually uniform, which can be perceived upon observation of these regions. To improve upon these shortcomings, other measuring techniques for computing Delta E, such as Delta94 and Delta2000, have been proposed over the years.
+However, the $\Delta E_{ab}^*$ error is prone to exaggerating the differences occurring when comparing two highly saturated colors of similar hue. This is due to the fact that the L*a*b* color space is not perfectly perceptually uniform, which can be perceived upon observation of these regions. To improve upon these shortcomings, other measuring techniques for computing Delta E, such as \emph{Delta94} and \emph{Delta2000}, have been proposed over the years.
 
-\emph{Delta94} is computed by first modifying the original L*a*b* values of both colors to compensate for perceptual distortions in the color space and then by computing the Euclidean distance from the modified values. Although the results match the human color difference perception more closely, the Delta94 error metric still lacks some accuracy in the blue-violet region~\cite{deltaEOverview}.
+Delta94 is computed by first modifying the original L*a*b* values of both colors to compensate for perceptual distortions in the color space and then by computing the Euclidean distance from the modified values. Although the results match the human color difference perception more closely, the Delta94 error metric still lacks some accuracy in the blue-violet region~\cite{deltaEOverview}.
 	
-\emph{Delta2000} attempts to remove these inaccuracies. Including the corrections added to Delta94, Delta2000 overall adds five correctional factors to the original $\Delta E_{ab}^*$ --- compensation factors for lightness, hue and chroma, compensation for neutral colors and, lastly, a hue rotation term for the problematic blue-violet region.
+Delta2000 attempts to remove these inaccuracies. Including the corrections added to Delta94, Delta2000 overall adds five correctional factors to the original $\Delta E_{ab}^*$ --- compensation factors for lightness, hue and chroma, compensation for neutral colors and, lastly, a hue rotation term for the problematic blue-violet region.
 
-From the listed Delta E equations, the Delta2000 error measurements are the most accurate in terms of human color difference perception~\cite{deltaEOverview}. However, in addition to being computationally intensive, the Delta2000 equation is, by its nature, discontinous~\cite{delta2000Discontinuities}. Therefore, it is not a preferred measure to use in gradient-based optimizers. As we utilize such an optimizer in the practical part of this thesis, we opt for using the simple $\Delta E_{ab}^*$ error.
+From the listed Delta E equations, the Delta2000 error measurements are the most accurate in terms of human color difference perception~\cite{deltaEOverview}. However, in addition to being computationally intensive, the Delta2000 equation is, by its nature, discontinous~\cite{delta2000Discontinuities}. Therefore, it is not a preferred measure to use in gradient-based optimizers, which is an observation we use in the practical part of this thesis.
 
 \subsubsection{Other color spaces}
 
 In addition to the already mentioned tristimulus color spaces, there exist many more used for various purposes. Following, we briefly overview some of them:
 \begin{itemize}
-\item \emph{L*u*v*} --- Similarly to the CIELAB system, L*u*v* (or CIELUV) aims for perceptual uniformity. As a matter of fact, the $L*$ value is defined in the same manner as in the CIELAB system, while $u$ and $v$ values are evaluated by certain projections of the $x$ and $y$ coordinates of the chromaticity diagram. When comparing their Euclidean error measure, the most important distinction between the two spaces is that while the CIELAB generally improves CIELUV in terms of color difference~\cite{CIELABcomparisonCIELUV}, CIELUV does not have as many inaccuracies in the dark regions~\cite{CIELABDarkSide}. Therefore, it is often recommended to use the CIELUV color space for characterization of color displays and the CIELAB color space for the characterization of colored surfaces and dyes.
+\item \emph{L*u*v*} --- Similarly to the CIELAB system, L*u*v* (or CIELUV) aims for perceptual uniformity. As a matter of fact, the $L*$ value is defined in the same manner as in the CIELAB system, while $u$ and $v$ values are evaluated by certain projections of the $x$ and $y$ coordinates of the chromaticity diagram. When comparing their Euclidean error measure, the most important distinction between the two spaces is that while the CIELAB generally outperforms CIELUV in terms of perceptual uniformity~\cite{CIELABcomparisonCIELUV}, CIELUV does not have as many inaccuracies in the dark regions~\cite{CIELABDarkSide}. Therefore, it is often recommended to use the CIELUV color space for characterization of color displays and the CIELAB color space for the characterization of colored surfaces and dyes.
 
-\item \emph{HSL} and \emph{HSI} color spaces define color by its \emph{hue}, \emph{saturation} and \emph{lightness} (or \emph{intensity}). They are an alternative representation of the RGB color space and must therefore be defined purely with reference to an RGB space~\cite{HSLreview}. As their components correlate better with human perception of color than those of the RGB system, they are often used in image processing applications, e.g. for processes such as feature detection (edge detection~\cite{edgeDetectionHSL}, object recognition) or image segmentation (which can be performed solely by using the hue component)~\cite{HSLreview}.
+\item \emph{HSL} and \emph{HSI} color spaces define color by its \emph{hue}, \emph{saturation} and \emph{lightness} (or \emph{intensity}). They are alternative representations of the RGB color space and must therefore be defined purely with reference to an RGB space~\cite{HSLreview}. As their components correlate more intuitively with human perception of color than those of the RGB system, they are often used in image processing applications, e.g. for processes such as feature detection (edge detection~\cite{edgeDetectionHSL}, object recognition) or image segmentation (which can be performed solely by using the hue component)~\cite{HSLreview}.
 
-\item \emph{CMYK} model is a subtractive color model commonly used in color printing. It is based on RGB's complementary colors --- \emph{cyan}, \emph{magenta} and \emph{yellow} (respectively). This means that assigning zero values to all components renders white light, and increasing the value of a component specifies how much of the respective color is \emph{subtracted} from the white light. Although the premise is that maximizing CMY values should render perfect black, in reality, the printing inks are not 100\% pure CMY and their combinations therefore cannot produce rich black. For this purpose, a fourth component, \emph{black} ($K$), is often added, giving rise to the CMYK model.
+\item \emph{CMYK} model is a subtractive color model commonly used in color printing. This means that assigning zero values to all components renders white light, and increasing the value of a component specifies how much of the respective color is \emph{subtracted} from the white light. It is based on RGB's complementary colors --- \emph{cyan}, \emph{magenta} and \emph{yellow} (respectively). Although the premise is that maximizing CMY values should render perfect black, in reality, the printing inks are not 100\% pure CMY and their combinations therefore cannot produce rich black. For this purpose, a fourth component, \emph{black} ($K$), is often added.
 \end{itemize}
 
 Other color spaces include the Munsell color system, RAL, Natural Color System, Pantone Matching System, CIELCH\textsubscript{ab}, CIELCH\textsubscript{uv}, etc$\ldots$
@@ -224,13 +224,13 @@ Tristimulus renderers are usually based on the RGB color space, although they of
 			\includegraphics[width=0.45\linewidth]{img/mitsuba_spectral_mode.jpg}\\
 		\end{tabular}
 	}
-	\caption{Comparison of an RGB-based rendering and spectral-based rendering as presented in the documentation of Mitsuba2~\cite{Mitsuba2}. Left: Spectral reflectance data of all materials is first converted to RGB and the scene is then rendered in the RGB mode, producing an unnaturally saturated image. Right: Scene is rendered directly in the spectral mode, resulting in more realistic colors. }
+	\caption{Comparison of an RGB-based rendering and spectral-based rendering as presented in the documentation of Mitsuba2~\cite{Mitsuba2}. Left: Spectral reflectance data of all materials is first converted to RGB and the scene is then rendered in the RGB mode. Right: Scene is rendered directly in the spectral mode.}
 	\label{fig:mitsubaRGBSpectralComparison}
 \end{figure}
 
 However, light in real world does not travel as a tristimulus value, but rather as a distribution of wavelengths. Therefore, RGB renderers cannot properly simulate the physical properties of color during e.g. reflections or refractions when ray tracing.
 
-Spectral rendering, on the other hand, uses full-spectral information of all materials and lights in the scene throughout the whole rendering process. Obviously, before visualization occurs, spectral information must be converted into tristimulus (usually RGB) values, but this does not pose a problem as, at the moment of conversion, all the physically based simulations have already taken place. Therefore, the rendered scene appears more realistic. We demonstrate this difference in~\cref{fig:mitsubaRGBSpectralComparison}, on a scene already rendered by Mitsuba2~\cite{Mitsuba2}.
+Spectral rendering, on the other hand, uses full-spectral information of all materials and lights in the scene throughout the whole rendering process. Obviously, before visualization occurs, spectral information must be converted into tristimulus (usually RGB) values, but this does not pose a problem as, at the moment of conversion, all the physically based simulations have already taken place. Therefore, the rendered scene appears more realistic. We demonstrate this difference in~\cref{fig:mitsubaRGBSpectralComparison}, on a scene already rendered by Mitsuba2~\cite{Mitsuba2}. As can be observed, while the scene rendered in the RGB mode produces an unnaturally saturated image, the spectrally-based render results in more realistic colors.
 
 In addition to a more convincing rendering of reflections and refractions, another reason for using spectral rendering is its capability to simulate physically based phenomena that arise due to the interaction of color with light. Following, we overview some of the most common ones:
 \begin{itemize}
@@ -261,7 +261,7 @@ As an RGB renderer does not possess spectral information, it cannot replicate th
 			\includegraphics[width=.30\linewidth]{img/metamerism_second_fl11.png}
 		\end{tabular}
 	}
-	\caption{The effects of metamerism. Left: Two different spectral reflectance curves, both evaluating to roughly $RGB=(220,175,105)$ under D65. Middle and right: Renderings of a sphere with assigned reflectance curves under D65 and F11 illuminants respectively.}
+	\caption{The effects of metamerism.}
 	\label{fig:metamerism}
 \end{figure}
 
@@ -279,9 +279,9 @@ Similarly to fluorescence, iridescent behavior can be ``faked'' in an RGB render
 
 \item \emph{Dispersion}
 
-When light travels from one medium to another (e.g. when light coming from air hits glass or water), its direction of travel is changed. This phenomenon is called \emph{refraction} and is closely described by Snell's law, which specifies how the angle of refraction can be computed from the angle of incidence and the \emph{refraction indices} of the two media~\cite{snellsLaw}. However, the refraction index depends not only on the \emph{type} of media, but also on the current \emph{wavelength}~\cite{dispersionRendering1} --- which implies that the resulting direction of photons may vary according to their wavelength.
+When light travels from one medium to another (e.g. when light coming from air hits glass or water), its direction of travel changes. This phenomenon is called \emph{refraction} and is closely described by Snell's law, which specifies how the angle of refraction can be computed from the angle of incidence and the \emph{refraction indices} of the two media~\cite{snellsLaw}. However, the refraction index depends not only on the \emph{type} of media, but also on the current \emph{wavelength}~\cite{dispersionRendering1} --- which implies that the resulting direction of photons may vary according to their wavelength.
 
-Probably the most known scenario displaying this phenomenon is white light hitting a dispersive prism. Upon interaction, light is split into a spectrum, creating a ``rainbow'' effect.
+Probably the most known scenario displaying this phenomenon is white light hitting a dispersive prism. Upon interaction, light is split into spectral bands, creating a ``rainbow'' effect.
 
 There have been multiple attempts to simulate physically based dispersion. We refer the interested reader to articles by~\citet{dispersionRendering1} or~\citet{dispersionRendering2}.
 

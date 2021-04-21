@@ -4,3 +4,13 @@
 
 However, it has to be noted that the approach presented in this paper works perfectly fine for target spectra sets up to several dozen, or maybe even low numbers of hundred, data points. Which is sufficient for typical usage in VFX scenarios, where only a few key assets (like e.g. the main colours of the costume of a lead character) are measured on set, in order to later constrain the spectral uplift of virtual doubles of this character.
 We also note that our approach, while being both slower to fit and slower to render than the sigmoid technique, offers the unique capability of targeted uplifting, which was simply not available before. As such, we deem a somewhat slower performance compared to sigmoid-based uplift to be an acceptable price to pay.
+
+
+
+We presented the first method capable of constraining the spectral uplifting process with an arbitrary set of target spectra. By utilising a trigonometric moment-based approach for spectral representation, the RGB values of the target spectra are accurately uplifted to their original spectral shapes, while the rest of the RGB gamut uplifts to smooth spectra. This results in smooth transitions between the various metameric families that originate from the constraining process.
+
+Our model shows a slight weakness when uplifting very dark colours, which we attribute to the inability of moment based spectral representations to represent constant spectra, and to the CERES solver, which only amplifies this deficiency. However, even including these minor drawbacks, the results in terms of colour accuracy are noteworthy, as the uplifted curves describe the original ones with negligible differences (even the errors for very dark colours are acceptable).
+
+However, neither the memory, nor the execution time of the uplifting processes of our model are optimal: the new and so far unique capability to perform targeted uplifts comes at the cost of some overhead that is not present in e.g. the unconstrained sigmoid uplift technique of Jakob and Hanika~\cite{jakob2019low}.
+
+In the future, we will primarily focus on utilising a more suitable and memory efficient structure for storing the constraints, such as a kD-tree or an octree. Secondly, we will improve the time execution by optimising the moment reconstruction process.

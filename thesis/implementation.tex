@@ -2,15 +2,15 @@
 
 We approach the problem of spectral uplifting similarly to~\citet{upsamplingJakobHanika}, where an uplifting model is created prior to rendering. Our implementation therefore consists of two parts --- \emph{model creation} and its subsequent \emph{utilization} in a rendering software. 
 
-For the first part, we extend an already existing uplifting tool, Borgtool, which is currently used for creating sigmoid-based RGB cubes in the same manner as in~\cref{alg:upliftingAlgSigmoid}. We add the possibility for creating trigonometric moment-based cubes (from now on referred to as \emph{trigonometric moment cube}), i.e. for the spectra to be stored with trigonometric moments rather than sigmoid coefficients. We also add an option for constraining such a cube with a user-specified atlas.
+For the first part, we extend an already existing uplifting tool, Borgtool, which is currently used for creating sigmoid-based RGB cubes in a way as described in~\cref{alg:upliftingAlgSigmoid}. We add the possibility for creating trigonometric moment-based cubes (from now on referred to as \emph{trigonometric moment cube}), i.e. for the spectra to be stored with trigonometric moments rather than sigmoid coefficients. We also add an option for constraining such a cube with a user-specified constraint set (e.g. a color atlas).
 
-We then show the accuracy of such a model by integrating it into ART, which, up until now (version 2.0.3), used only one built-in sigmoid-based cube for all its uplifting processes.
+We then describe the theory behind the integration of this model into a rendering software. In practice, we add its support into ART, which, up until now (version 2.0.3), has used only one built-in sigmoid-based cube for uplifting purposes.
 
 \section{Uplifting model}
 
-As we base most of our implementation on the already existing sigmoid-based cube, we start this section with its detailed description. Specifically, we focus on its structure.
+As we base most of our implementation on the already existing sigmoid-based approach, we start this section with the detailed description of its model, i.e. the sigmoid-based cube. We then describe our trigonometric moment cube, which can be viewed as its extension.
 
-The RGB cube structure contains multiple entries in form of uniformly placed lattice points. Following, we name the main parameters of a single cube entry:
+The sigmoid-based cube structure contains multiple entries in form of evenly spaced lattice points. Following, we name the main parameters of a single cube entry:
 \begin{itemize}
 	\item \emph{target RGB} --- the RGB coordinates that the point has in the cube
 	\item \emph{coefficients} --- 3 sigmoid coefficients used to reconstruct a spectrum so it matches the target RGB
@@ -18,17 +18,17 @@ The RGB cube structure contains multiple entries in form of uniformly placed lat
 \end{itemize}
 Along with its entries, the resulting cube structure also stores a few other properties, both \emph{static}, such as the illuminant according to which the RGB cube is uplifted, and \emph{user-adjustable}, such as the cube dimension or the fitting threshold (i.e. the maximum allowed difference between the target and the lattice RGB).
 
-Our trigonometric moment cube can be viewed as an extension of the sigmoid cube, as it keeps most of its parameters and mainly extends the already existing ones. The main difference between them lies in the distinction of the lattice points --- while the sigmoid cube regards all of its points as equal, the trigonometric moment cube distinguishes (by means of a \texttt{seeded} boolean parameter) between \emph{atlas lattice points}, i.e. the lattice points that store the user-inputted RGB:spectra mappings; and \emph{regular points}, which do not.
+Our trigonometric moment cube includes most of these parameters, and mainly extends the ones that are not suitable for the moment representation. The main difference between the two cubes lies in the distinction of the lattice points --- while the sigmoid cube regards all of its points as equal, the trigonometric moment cube distinguishes (by means of a \texttt{seeded} boolean parameter per entry) between \emph{seeded points}, i.e. the lattice points that store the user-inputted RGB:spectra mappings; and \emph{regular points}, which do not.
 
-Our requirements for the shape of the spectra at atlas lattice points differ from the ones at regular lattice points. While we prefer the regular lattice points to have their spectra as smooth as possible in order to avoid unexpected artifacts under other illuminants, the coefficients of the atlas lattice points must reconstruct spectra almost identical to the input spectra, which might include sharp edges and spikes.
+Our requirements for the shape of the spectra at seeded points differ from the ones at regular points. While we prefer the regular points to have their spectra as smooth as possible in order to avoid unexpected artifacts under other illuminants, the coefficients of the seeded points must reconstruct spectra almost identical to the input spectra, which might include sharp edges and spikes.
 
-Therefore, it is sufficient for the regular lattice points to be represented with a smaller number of coefficients, while atlas lattice points might require a lot more. Although a smooth spectrum can be represented with a high number of coefficients, such a representation is memory inefficient, its reconstruction is more time consuming, and, most importantly, it does not work well with the optimizer. Based on our experiments in~\cref{ssec:noOfMoments}, we decide to store the spectra of regular lattice points with 3 coefficients and adjust the number of coefficients of the atlas lattice points depending on the nature of its desired spectrum.
+Therefore, it is sufficient for the regular points to be represented with a smaller number of coefficients, while seeded points might require a lot more. Although a smooth spectrum can be represented with a high number of coefficients, such a representation is memory inefficient, its reconstruction is more time consuming, and, most importantly, it does not work well with the optimizer. Based on our experiments in~\cref{ssec:noOfMoments}, we decide to store the spectra of regular points with 3 coefficients and adjust the number of coefficients of the seeded points depending on the nature of its desired spectral shape.
 
-In addition to supporting variable number of coefficients (ranging from 3 to 21), the trigonometric moment cube also supports the possibility of a multiple coefficient representations per lattice point. The sole purpose of such extension is to lower the cube size requirements upon constraining, which we address more thoroughly in ref.
+In addition to supporting variable number of coefficients (ranging from 3 to 21), the trigonometric moment cube also supports the possibility of having multiple coefficient representations per lattice point. The sole purpose of this extension is to lower the cube size requirements upon constraining, which we discuss later in~\cref{ssec:cubeSeeding}.
 
-In addition to the cube structure, the uplifting process of the trigonometric moment cube is also similar to the one of the sigmoid cube, which closely follows~\cref{alg:upliftingAlgSigmoid}. Its main distinctions are in the constraining process (which the sigmoid cube lacks) and in the first round of optimizing, or, as we refer to from now on, \emph{fitting}.
+In addition to the cube structure, the construction of the trigonometric moment cube is also similar to the one of the sigmoid cube, which follows~\cref{alg:upliftingAlgSigmoid}. Its main distinctions are in the constraining process (which the sigmoid cube lacks) and in the first round of optimizing, or, as we refer to from now on, \emph{fitting}.
 
-Following, we name the individual steps of the process, which we then analyze in greater detail.
+Following, we name the individual steps of the process, which we then describe in greater detail.
 
 \begin{enumerate}
 	\item \emph{Initialization}
@@ -41,16 +41,16 @@ Following, we name the individual steps of the process, which we then analyze in
 
 \subsection{Initialization} \label{ssec:initialization}
 
-This part of the run is responsible for three things:
+This part of the run is responsible for the following:
 \begin{itemize}
 	\item parsing of the parameters
 	\item initialization of the cube and its entries with default values
-	\item loading of the required color atlases
+	\item loading of the required constraint sets
 \end{itemize}
 
 The initialization of the cube is pretty straightforward, as all of its properties are either user-defined or set to default (note: the default illuminant is always D65). The number of cube entries is directly proportional to the cube's \texttt{dimension} parameter, which specifies the number of entries per one axis. This renders the total number of entries to $dimension^3$. As the lattice points are positioned evenly, their target RGB values are equivalent to their coordinates in the RGB cube.
 
-The loading of the atlases is a bit more complicated. Firstly, a single color atlas is inputted in a form of a simple .txt file, which contains merely a list of entries in a textual form as shown in~\cref{fig:macbethSampleText}. Therefore, it requires parsing.
+The constraint sets are inputted in a form of a simple .txt file, which contains merely a list of entries in a textual form as shown in~\cref{fig:macbethSampleText}. This step is responsible for the parsing of the file, and for storage of individual constraints. In order to avoid high memory requirements arising with large input datasets, we do not store the spectral data directly, but take advantage of the trigonometric moments.
 
 \begin{figure}
 	\lstset{
@@ -86,19 +86,19 @@ The loading of the atlases is a bit more complicated. Firstly, a single color at
 	\label{fig:macbethSampleText}
 \end{figure}
 
-Moreover, the spectral data obtained from the atlases cannot be stored in the Borgtool directly, so as to avoid extreme memory requirements arising with large atlases. To solve this problem, we take advantage of the trigonometric moments.
-
 We store the spectral curves of the individual atlas entries with Fourier coefficients as described in~\cref{par:spectrumToCoefficientConversion}. We mirror but do not warp the signal prior to coefficient computation (see~\cref{sec:storingMoments}).
 
 The number of coefficients per atlas entry is variable, ranging from 4 to 21. We explain our method for determining the sufficiency of coefficient representation, and therefore the coefficient count for each atlas entry, in~\cref{ssec:noOfMoments}.
 
 \subsection{Cube seeding} \label{ssec:cubeSeeding}
 
-In order to uplift the whole cube as described in~\cref{alg:upliftingAlgSigmoid}, we must first fit one or more \emph{starting points}, whose coefficients can then be used as prior for the fitting of other lattice points. For these purposes, we utilize the user-specified color atlas. The general idea behind this process is to copy the coefficients of atlas entries to specific lattice points, and then use these coefficients as prior for fitting said lattice points. We refer to this process as \emph{seeding}, and term the seeded lattice points \emph{atlas lattice points}.
+In order to uplift the whole cube as described in~\cref{alg:upliftingAlgSigmoid}, we must first fit one or more \emph{starting points} whose coefficients can then be used as prior for the fitting of other lattice points. For this purpose, we utilize the user-specified constraint set. The general idea behind this process is to copy the coefficients of constraints to specific lattice points, and then use these coefficients as prior for fitting said lattice points. We refer to this process as \emph{seeding} of the cube, and term the constraints assigned to these lattice points their \emph{seeds}.
 
-The ideal scenario would be if the RGB of the atlas entries were to perfectly match the coordinates of lattice points. However, as the RGB value of an atlas entry can be virtually any triplet within the (0,1) range, it is most likely that the atlas entries evaluate to a point inside the cube voxel.
+The ideal scenario would be if the RGB values of the constraints were to perfectly match the coordinates of the lattice points. However, as the constraints can evaluate to virtually any triplet within the $[0,1]$ range, it is most likely that they would correspond to points inside the cube's voxels.
 
-A realistic approach would be to create a complete injective mapping between the atlas entries and their closest lattice points. However, such a mapping would provide satisfactory results only if we were to use the nearest-neighbor method for uplifting non-mapped RGB triplets. If we were to use either the interpolation of coefficients or spectra, which both employ all 8 voxel corners during the uplift, the curves of uplifted RGB values of atlas entries would most likely be considerably distinct from the desired result (i.e. the original atlas entry spectrum), subsequently causing color artifacts. We can observe this behavior in~\cref{fig:seedingMethod1corner}. However, as seen in~\cref{fig:seedingMethod8corners}, propagating the information about the original reflectance of the entry to all voxel corners improves the result remarkably. We therefore opt for seeding all 8 voxel corners per an atlas entry.
+A realistic approach would be to create a complete injective mapping between the constraints and their closest lattice points. However, such a mapping would provide satisfactory results only if we were to use the nearest-neighbor method for uplifting non-mapped RGB triplets. If we were to use either the interpolation of coefficients or spectra, which both employ data at all 8 voxel corners during the uplift, the curves of the uplifted RGB values of constraints would most likely be considerably distinct from the desired result (i.e. the original spectrum of the constraint), subsequently causing color artifacts. This is mainly due to our choice of coefficient count for non-mapped entries, which is a lot lower than for the seeded entries (see thorough explanation in~\cref{ssec:noOfMoments}), i.e. the curves of the non-seeded entries cannot be as precise.
+
+We can observe this behavior in~\cref{fig:seedingMethod1corner}. However, as seen in~\cref{fig:seedingMethod8corners}, propagating the information about the original reflectance of the constraint to all voxel corners improves the result remarkably. We therefore opt for seeding all 8 voxel corners per constraint.
 
 \begin{figure}[t]
 	\centering
@@ -119,11 +119,11 @@ A realistic approach would be to create a complete injective mapping between the
 	\label{fig:seedingMethodInterpolation}
 \end{figure}
 
-During the seeding process, it may occur that two atlas entries would fall into neighboring voxels, i.e. that they would share some of the voxel corners. We solve such collisions by utilizing the possibility of one lattice point having multiple coefficient representations. In addition to coefficients and their count, we also store an entry ID per each representation, so as to later distinguish the reconstructed curves during rendering and decide which to employ (explained in more detail in~\cref{sec:rendererIntegration}).
+During the seeding process, it may occur that two constraints would fall into neighboring voxels, i.e. that they would share some of the voxel corners. In order to utilize both of these constraints as seeds, we support the possibility of one lattice point having multiple coefficient representations. In addition to coefficients and their count, we also store an entry ID per each representation, so as to later distinguish the reconstructed curves during rendering and decide which to employ (explained in more detail in~\cref{sec:rendererIntegration}).
 
-If two atlas entries fall into the same voxel, however, there is no way to determine the interpolation of which the user desires upon uplifting the RGB values inside said voxel. We therefore discard one of the entries and throw an error informing the user of the collision and suggesting to increase of the cube dimension.
+If two constraints fall into the same voxel, however, there is no way of determining the interpolation of which the user desires upon uplifting the RGB values inside said voxel. We therefore discard one of the constraints and throw an error informing the user of the collision and suggesting the increase of cube \texttt{dimension} parameter.
 
-We show an example of a cube seeded and subsequently fitted with the Munsell Book of Colour in~\cref{fig:seededCubeMCB}. Lattice points marked as black represent the seeded points. Note that a lot of these points store multiple coefficient representations.
+We show an example of a cube seeded and subsequently fitted with the Munsell Book of Color used as a constraints set in~\cref{fig:seededCubeMCB}. Lattice points marked as black represent the seeded points. Note that a lot of these points store multiple coefficient representations.
 
 \begin{figure}[t!]
 	\centering
@@ -145,11 +145,11 @@ We show an example of a cube seeded and subsequently fitted with the Munsell Boo
 		\includegraphics[width=\linewidth]{img/seededCube_mcb4.png}
 		\label{fig:seededCube_mcb4}
 	\end{subfigure}
-	\caption{A 32-dimensional cube fitted with the Munsell Book of Colour}
+	\caption{A 32-dimensional cube fitted with the Munsell Book of Color}
 	\label{fig:seededCubeMCB}
 \end{figure}
 
-Constraining the uplifting process with an atlas is optional. If no atlas is inputted, all lattice points are regarded as regular lattice points and the cube is fitted from the middle in the same manner as the sigmoid cube. However, the resulting uplifting structure provides no advantages over the sigmoid cube.
+Constraining the uplifting process with an atlas is optional. If no atlas is inputted, all lattice points are regarded as regular points and the cube is fitted from the middle in the same manner as the sigmoid cube. However, the resulting uplifting structure provides no advantages over the sigmoid cube.
 
 Supporting this option requires us to specify 3 prior coefficients for the center point, i.e. for a lattice points whose spectral curve roughly evaluates to an RGB of $(0.5, 0.5, 0.5)$. By storing spectral curves that roughly evaluate to such RGB with the trigonometric moments, we observe that the coefficients roughly evaluate to $\{0.5, 0, 0\}$. Therefore, we use them as prior.
 
@@ -167,7 +167,7 @@ We provide a comparison between the starting points when seeding from the middle
 		\includegraphics[width=\linewidth]{img/seededStarting_mcb.png}
 		\label{fig:seededStarting_mcb}
 	\end{subfigure}
-	\caption{Comparison of the placement of starting points when seeding with the Munsell Book of Colour (right) and when fitting from the middle with sigmoids (left)}
+	\caption{Comparison of the placement of starting points when seeding with the Munsell Book of Color (right) and when fitting from the middle with sigmoids (left)}
 	\label{fig:seededStartingPoints}
 \end{figure}
 
@@ -177,9 +177,9 @@ By seeding the cube, we have appointed coefficients to some of the lattice point
 
 Our problem of improving the coefficients satisfies the definition of the \emph{Non-linear Least Squares} problem~\cite{nonLinearLeastSquares}. Non-linear Least Squares is an unconstrained minimization problem in the following form:
 \begin{equation} \label{eq:nonLinearLeastSquares}
-	 \underset{x}{\text{minimize}} \hspace{0.5em} f(x) = \sum_{i} f_{i}(x)^{2},
+\underset{x}{\text{minimize}} \hspace{0.5em} f(x) = \sum_{i} f_{i}(x)^{2},
 \end{equation}
-where $x= \{x_{0}, x_{1}, x_{2}, ... \}$ is a parameter block that we are trying to improve (i.e. our coefficients) and $f_{i}$ are so-called \emph{cost functions}. The definition of cost functions is dependent solely on the current problem. In our case, we primarily require to minimize the difference between the lattice and the target RGB. Our secondary requirement is for the shapes of the original atlas entry curve and the reflectance curve of the atlas lattice point to be similar. This gives rise to multiple choices for cost functions, such as using the difference between curves along with the Delta E error, using one or multiple cost functions for the RGB error etc\ldots After implementing some of them and testing their performance, the results of which we provide in~\cref{ssec:costFunctions}, we decided on using four cost functions --- three for specifying the absolute difference in one of the three axes of the cube, and one for specifying the average distance between curves per wavelength sample. We also include a heuristic which sets the value of the fourth cost function to 0 if the curve distance falls below a certain threshold, and iteratively increases the threshold if the optimizer fails. The reasoning behind this is also explained in~\cref{ssec:costFunctions}.
+where $x= \{x_{0}, x_{1}, x_{2}, ... \}$ is a parameter block that we are trying to improve (i.e. our coefficients) and $f_{i}$ are so-called \emph{cost functions}. The definition of cost functions is dependent solely on the current problem. In our case, we primarily require to minimize the difference between the lattice and the target RGB. Our secondary requirement is for the shapes of the original atlas entry curve and the reflectance curve of the seeded point to be similar. This gives rise to multiple choices for cost functions, such as using the difference between curves along with the Delta E error, using one or multiple cost functions for the RGB error etc\ldots After implementing some of them and testing their performance, the results of which we provide in~\cref{ssec:costFunctions}, we decided on using four cost functions --- three for specifying the absolute difference in one of the three axes of the cube, and one for specifying the average distance between curves per wavelength sample. We also include a heuristic which sets the value of the fourth cost function to 0 if the curve distance falls below a certain threshold, and iteratively increases the threshold if the optimizer fails. The reasoning behind this is also explained in~\cref{ssec:costFunctions}.
 
 To solve an optimization problem defined in the way as described above, we use the CERES solver. We 
 
@@ -189,16 +189,16 @@ As already mentioned in~\cref{sec:upliftingMethods}, the CERES solver is an open
 
 To solve a Non-linear Least Squares problem, the solver requires us to specify only a so-called \emph{residual block}, which is a structure defined by the prior coefficients and the cost functions. During the execution, the solver attempts to minimize the values of the cost functions (or \emph{residuals}) in the residual block. The execution is aborted and the current best parameter block returned when the solver achieves either the specified number of iterations or nonmonotonic steps. For more information on the specifics of the CERES solver, we refer the interested reader to its documentation by~\citet{ceresNonLinearLeastSquares}.
 
-There is one main downside to using the CERES solver. As it was designed to handle very large, sparse problems where every residual term depends on only a few of the input parameters, it is not ideal for solving problems with only one large parameter block, i.e. it might get stuck in local minima and therefore produce unsatisfactory results. Unfortunately, if an atlas lattice point is represented with a high number of coefficients, our optimization problem falls into this category.
+There is one main downside to using the CERES solver. As it was designed to handle very large, sparse problems where every residual term depends on only a few of the input parameters, it is not ideal for solving problems with only one large parameter block, i.e. it might get stuck in local minima and therefore produce unsatisfactory results. Unfortunately, if an seeded point is represented with a high number of coefficients, our optimization problem falls into this category.
 
 We solve such problematic cases by applying a simple heuristic, which consists of slightly altering the first coefficient (as it has the highest influence on the shape of the curve) and running the optimizer again. However, although such an optimization greatly improves the overall performance of fitting, it remains insufficient for too high a number of coefficients, i.e. the threshold for the fourth residual must be increased to values extremely high and, by then, it loses resemblance to the original shape.
 
 Therefore, we implement another heuristic improvement --- if the coefficient count is higher than 14, we let the optimizer optimize only the first 4 coefficients while leaving the others constant. We use the threshold of $c > 14$ as that is roughly the boundary where the fitted curves begin to show undesired artifacts, and we optimize the first 4 coefficients because their number is both low enough for the optimizer to handle without errors, and high enough so we give the fitting process enough freedom without it having to resort to sinusodial-like shapes.
 
-We summarize the fitting process of the starting points, including the utilization of threshold for our fourth cost function (see~\cref{ssec:costFunctions}), in~\cref{alg:fittingAtlasLatticePoints}. If the optimizer is unable to fit an atlas lattice points, we throw a warning and convert it into a regular lattice point. However, as of yet, we have not encountered a failure.
+We summarize the fitting process of the starting points, including the utilization of threshold for our fourth cost function (see~\cref{ssec:costFunctions}), in~\cref{alg:fittingAtlasLatticePoints}. If the optimizer is unable to fit an seeded points, we throw a warning and convert it into a regular point. However, as of yet, we have not encountered a failure.
 
 \begin{algorithm}[t!]
-	\caption{Fitting of one coefficient representation of a $point$ from atlas lattice points}
+	\caption{Fitting of one coefficient representation of a $point$ from seeded points}
 	\label{alg:fittingAtlasLatticePoints}
 	\begin{algorithmic}[1]
 		\State $threshold \gets 0.001$
@@ -221,19 +221,19 @@ We summarize the fitting process of the starting points, including the utilizati
 
 \subsection{Cube fitting} \label{ssec:cubeFitting}
 
-As the atlas lattice points are represented with a higher number of coefficients and may even contain multiple coefficient representations, they cannot be directly used as prior for the regular lattice points. First, they must be ``converted'' into a lower-dimensional representation.
+As the seeded points are represented with a higher number of coefficients and may even contain multiple coefficient representations, they cannot be directly used as prior for the regular points. First, they must be ``converted'' into a lower-dimensional representation.
 
-We refer to the conversion process as \emph{coefficient recalculation}. It consists of reconstructing the reflectance spectrum of the atlas lattice point and subsequently saving it with 3 coefficients. Although this process causes significant loss of spectral information, it preserves the rough outline of the curve. This works to our benefit --- it reduces the likelihood of significant color artifacts between the atlas lattice points and regular lattice points while keeping the spectra smooth.
+We refer to the conversion process as \emph{coefficient recalculation}. It consists of reconstructing the reflectance spectrum of the seeded point and subsequently saving it with 3 coefficients. Although this process causes significant loss of spectral information, it preserves the rough outline of the curve. This works to our benefit --- it reduces the likelihood of significant color artifacts between the seeded points and regular points while keeping the spectra smooth.
 
 \begin{figure}[t!]
 	\centering
 	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
 	\includegraphics[width=0.8\linewidth]{img/recalculation.png}
-	\caption{An illustrative demonstration of a problem posed by the coefficient recalculation of an atlas lattice point with multiple metameric spectra (stored in the form of moment representations).}
+	\caption{An illustrative demonstration of a problem posed by the coefficient recalculation of an seeded point with multiple metameric spectra (stored in the form of moment representations).}
 	\label{fig:recalculation_process}
 \end{figure}
 
-A problem arises if the atlas lattice point that is being recalculated for the purposes of fitting a regular lattice point contains multiple moment representations from different metameric families. We illustrate this situation in~\cref{fig:recalculation_process}. The recalculated atlas lattice point (denoted $x$) contains the moment representation of both the constraint $A$ and $B$. As these have vastly distinct shapes, it is natural that they evaluate to completely different colors under error-prone illuminants (specifically, the colors shown in the image are under FL11). Choosing to recalculate only the representation of $A$ in order to obtain the prior coefficients of the regular lattice point (denoted $y$) would result in significant color artifacts between $y$ and the voxel seeded with $B$. Symmetrically, the same applies to choosing to recalculate only the coefficient representation of $B$. We can also observe this in~\cref{fig:recalculation_colorGradients}, where we present the comparison of the color gradients created by respectively using the individual recalculation techniques. Note that the spectrum (and, subsequently, color) that the $A$ and $B$ entries evaluate to in both~\cref{fig:recalculation_process} and~\cref{fig:recalculation_colorGradients} is not the original spectrum of the atlas entries, but the spectrum that the coefficient representations saved at the atlas lattice point $x$ evaluate to. Also note that the spectra and colors corresponding to point $y$ are the recalculation results, not the final fitting results.
+A problem arises if the seeded point that is being recalculated for the purposes of fitting a regular point contains multiple moment representations from different metameric families. We illustrate this situation in~\cref{fig:recalculation_process}. The recalculated seeded point (denoted $x$) contains the moment representation of both the constraint $A$ and $B$. As these have vastly distinct shapes, it is natural that they evaluate to completely different colors under error-prone illuminants (specifically, the colors shown in the image are under FL11). Choosing to recalculate only the representation of $A$ in order to obtain the prior coefficients of the regular point (denoted $y$) would result in significant color artifacts between $y$ and the voxel seeded with $B$. Symmetrically, the same applies to choosing to recalculate only the coefficient representation of $B$. We can also observe this in~\cref{fig:recalculation_colorGradients}, where we present the comparison of the color gradients created by respectively using the individual recalculation techniques. Note that the spectrum (and, subsequently, color) that the $A$ and $B$ entries evaluate to in both~\cref{fig:recalculation_process} and~\cref{fig:recalculation_colorGradients} is not the original spectrum of the atlas entries, but the spectrum that the coefficient representations saved at the seeded point $x$ evaluate to. Also note that the spectra and colors corresponding to point $y$ are the recalculation results, not the final fitting results.
 
 \begin{figure}[t!]
 	\centering
@@ -354,12 +354,12 @@ Specifically, the conversion of an equal energy reflectance spectrum to RGB unde
 
 Unfortunately, 3 trigonometric coefficients are not capable of representing such spectrum without slight error. This becomes even more visible if the amount of samples used for the internal representation of spectra is low, as it gives less freedom to the optimizer. Furthermore, this problem may also arise for target RGB values extremely close to $(255, 255, 255)$, which is mainly the case in higher-resolution cubes.
 
-To give a specific example, the optimizer fails for the target RGB of $(255, 255, 255)$ if the cube is seeded with Munsell Book of Colours (as the internal representation then consists of only 36 samples with 10nm increment), for the target RGB of $(255, 255, 255)$ if fitting from the middle with the fitting threshold being $1000$times lower than its default value (i.e. we change it from being $1/100$ of a voxel to $1/100000$ of a voxel), and other, similarly extreme combinations of low threshold and sparsely-sampled atlases.
+To give a specific example, the optimizer fails for the target RGB of $(255, 255, 255)$ if the cube is seeded with Munsell Book of Colors (as the internal representation then consists of only 36 samples with 10nm increment), for the target RGB of $(255, 255, 255)$ if fitting from the middle with the fitting threshold being $1000$times lower than its default value (i.e. we change it from being $1/100$ of a voxel to $1/100000$ of a voxel), and other, similarly extreme combinations of low threshold and sparsely-sampled atlases.
 
-To minimize the created errors, we add a heuristic-based improvement of the coefficients, which sets their values to ones we assume are closest to the optimum and then proceeds similarly to the coefficient improvement of atlas lattice entries in~\cref{alg:fittingAtlasLatticePoints}. For a pre-defined amount of times, it slightly changes up the coefficients and runs the optimizer again, terminating if successful. However, neither this, nor any other heuristic-based improvement approach we attempted to implement, were capable of eliminating failures. Their only asset was a slightly lowered fitting threshold in some of the cases.
+To minimize the created errors, we add a heuristic-based improvement of the coefficients, which sets their values to ones we assume are closest to the optimum and then proceeds similarly to the coefficient improvement of seeded entries in~\cref{alg:fittingAtlasLatticePoints}. For a pre-defined amount of times, it slightly changes up the coefficients and runs the optimizer again, terminating if successful. However, neither this, nor any other heuristic-based improvement approach we attempted to implement, were capable of eliminating failures. Their only asset was a slightly lowered fitting threshold in some of the cases.
 
 \subsection{Cube storage}
-	
+
 Once the cube is fitted, its contents are written to a binary file. As we want the resulting file to be as small as possible, we save only the information crucial for the purposes of rendering. Following, we provide a list of contents of a cube file:
 \begin{itemize}
 	\item \emph{version}
