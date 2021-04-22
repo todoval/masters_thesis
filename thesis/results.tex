@@ -443,7 +443,7 @@ In the following, we evaluate the accuracy of our technique when used for uplift
 	\label{fig:results_uplift_munsell}
 \end{figure}
 
-\subsection{Constraint uplifting accuracy}
+\subsection{Constraint uplifting accuracy} \label{ssec:constraintAccuracy}
 
 We tested the accuracy of our proposed constrained uplifting approach on the Munsell Book of Color (MBOC), which we utilized as a constraint set for a $32^3$-sized coefficient cube for the sRGB color space. Of the 1598 entries in the MBOC, 1396 are in the sRGB gamut: therefore, our experiments only included those. If a larger RGB space (such as e.g. Adobe RGB) were used as input space, the full number of atlas entries could be used: working with sRGB was not due to any restrictions in our proposed technique, but only done to stay within the standard RGB space of graphics. Additionally, note that 82 of the atlas entries are not utilized as constraints due to collisions occurring inside voxels, which are unavoidable in a cube with such a low dimension.
 
@@ -462,7 +462,7 @@ The average round-trip error was just a Delta E of $0.21$. As the maximum error 
 
 An example of this behavior in the dark region of the RGB cube can be observed in~\cref{fig:results_uplift_munsell}. The reason for it is the inadequate fitting of seeded points by the optimizer. This behavior was already present in~\cref{ssec:costFunctions} in~\cref{fig:resultsCostFunctions}, where we concluded that it is due to both the moment representation's inability to flawlessly reconstruct constant curves, and the optimizer's tendency to amplify this deficiency. As the spectral shapes of the dark colors resemble almost constant lines close to zero, it makes sense that the optimizer would primarily fail there.
 
-In~\cref{fig:seeding_accuracy_dark} and~\cref{fig:seeding_accuracy_other}, we provide comparisons of curves of the original spectra, the seeded spectra (labeled \emph{round-trip}, i.e. it represents the direct reconstruction from the moments used to store the original spectra) and the uplifted spectra (i.e. the result of querying the final coefficient cube, including interpolation within the voxel the RGB value lies in). Ideally, all three curves should be identical: a difference between ``original'' and ``round-trip'' points to the deficiency of the moment-based spectral reconstruction, while a difference between ``round-trip'' and ``uplift'' indicates a drawback in the optimizer. We can observe that, while for darker colors (see~\cref{fig:seeding_accuracy_dark}), the errors are mainly due to inadequacies of the optimizer, slight curve deviations for brighter colors (see~\cref{fig:seeding_accuracy_other}) are usually due to imperfections of the moment representation.
+In~\cref{fig:seeding_accuracy_dark} and~\cref{fig:seeding_accuracy_other}, we provide comparisons of curves of the original spectra, the seeded spectra (labeled \emph{round-trip}, i.e. it represents the direct reconstruction from the moments used to store the original spectra) and the uplifted spectra (i.e. the result of querying the final coefficient cube, including interpolation within the voxel the RGB value lies in). Ideally, all three curves should be identical: a difference between ``original'' and ``round-trip'' points to the deficiency of the moment-based spectral reconstruction, while a difference between ``round-trip'' and ``uplift'' indicates a drawback in the optimizer. We can observe that, while for darker colors (see~\cref{fig:seeding_accuracy_dark}), the errors are mainly due to deficiencies of the optimizer, slight curve deviations for brighter colors (see~\cref{fig:seeding_accuracy_other}) are usually due to imperfections of the moment representation.
 
 \begin{figure}[ht]
 	\centering
@@ -631,7 +631,7 @@ For non-constrained uplifting, our method provides no benefits compared to the s
 
 That having been said, we wish to point out that so far, our focus was placed on the correctness and accuracy of the constrained uplift, i.e. our implementation of both the model creation and its utilization in a renderer does not include any real optimizations yet. In the future, these could be applied to the fitting process (by further exploiting the possibilities of the CERES solver, or, possibly, another optimization technique) and to the actual uplifting, which currently does not cache any intermediate values (such as the exponential moments) and therefore requires them to be unnecessarily re-computed during each uplift. We estimate that such optimizations could improve the performance up to a factor of two, both during fitting and during rendering.
 
-\section{Future work}
+\section{Future work} \label{sec:futureWork}
 
 In this chapter, we have already mentioned multiple deficiencies of our system. Following, we surmise the most important ones and outline their possible solutions:
 \begin{itemize}
@@ -639,9 +639,9 @@ In this chapter, we have already mentioned multiple deficiencies of our system. 
 	
 	As mentioned in~\cref{ssec:memoryUsage}, evenly spacing lattice points in the RGB cube is not the optimal approach, especially if the constraint set has a high number of spectra in evaluating to RGB values in close vicinity. In order to improve both the memory requirements and the resulting colorimetric properties, we suggest utilizing a dynamic structure capable of splitting the RGB space into variably-sized voxels according to the number of constraints, such as a kD-tree or an octree.
 	
-	\item{\emph{Implementation optimization}}
+	\item{\emph{Execution time}}
 	
-	In order to improve the performance of the uplifting process in a renderer, multiple optimizations could be added, such as storing intermediate values (e.g. exponential moments during spectral reconstruction), or perfecting the process of determining whether the voxel has been seeded prior to trilinear interpolation (see~\cref{sec:rendererIntegration}). Some of these optimization could also be included in the cube fitting process.
+	In order to improve the execution time of the uplifting process in a renderer, multiple optimizations could be added, such as storing intermediate values (e.g. exponential moments during spectral reconstruction), or perfecting the process of determining whether the voxel has been seeded prior to trilinear interpolation (see~\cref{sec:rendererIntegration}). Some of these optimization could also be included in the cube fitting process.
 	
 	\item{\emph{Sufficient moment count}}
 	
@@ -654,5 +654,10 @@ In this chapter, we have already mentioned multiple deficiencies of our system. 
 	\item{\emph{Unfitted points around $RGB\approx(255, 255, 255)$}}
 	
 	As mentioned in~\cref{ssec:cubeImprovement}, lattice points evaluating roughly to $RGB\approx(255, 255, 255)$ may, under specific conditions, fail the fitting process. As this is due to the inaccuracies of ART, we propose utilizing a different library for color conversion purposes.
+	
+	\item{\emph{Deficiency of the cube's dark region}}
+	
+	As the color errors occurring for constraints in the dark region of the cube are mainly due to the deficiency of the optimizer (see~\cref{ssec:constraintAccuracy}), it is likely that they could be eliminated by either further exploiting the possibilities of the optimizer or choosing a different optimization technique. Another option is to propose a special-case handling for curves evaluating to such low RGB values. This could be done in a similar manner than for the points with $RGB\approx(255, 255, 255)$ (see~\cref{ssec:cubeImprovement}).
+	
 	
 \end{itemize}
