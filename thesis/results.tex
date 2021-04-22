@@ -2,7 +2,9 @@
 
 In this chapter, we analyze the accuracy of our method for constrained spectral uplifting. We start by focusing on the effects of various implementation details on the results and justifying our decisions regarding their selection. Afterward, we present the actual results achieved in the form of rendered images, and analyze them in terms of their colorimetric properties.
 
-We conclude this chapter by shortly overviewing the performance of our method by providing measurements of both memory utilization and time performance, and proposing improvements for future work.
+We conclude this chapter by shortly overviewing the performance of our method by providing measurements of both memory utilization and execution time, and proposing improvements for future work.
+
+All the data of color atlases and illuminants used in our experiments is provided by ART~\cite{ART}.
 
 \section{Implementation choices}
 
@@ -10,7 +12,7 @@ The structure of the trigonometric moment cube resulting from the implemented Bo
 \begin{itemize}
 	\item the signal mapping technique used for spectral representation with trigonometric moments
 	\item the number of trigonometric moments with which to store spectra
-	\item the utilization of the optimizer, specifically its definition of residual blocks
+	\item the utilization of the optimizer, specifically the definition of its residual blocks
 \end{itemize}
 
 This sections overviews our decision-making process regarding these issues, and presents results achieved with other methods to support our claim.
@@ -18,13 +20,13 @@ This sections overviews our decision-making process regarding these issues, and 
 \subsection{Signal mapping techniques} \label{sec:storingMoments}
 The first thing we analyze and decide on is the technique used for mapping wavelengths to a signal for the storage and subsequent reconstruction of moments. As already mentioned in~\cref{par:spectrumToCoefficientConversion}, we have the choice of both mirroring and warping the signal, which overall creates four options --- using only mirroring, using only warping, using both or using neither, i.e. utilizing the original signal.
 
-Note that our requirements for the resulting spectral shapes differ depending on the type of the lattice point. For the atlas lattice points, we aim for the highest possible precision in terms of curve reconstruction, so as to lose as little information about the original atlas entry as possible. Regular lattice points, however, do not have a prior atlas entry that their spectra must approximate. Therefore, in order to prevent color artifacts upon interpolation, we mainly aim for their smoothness.
+Note that our requirements for the resulting spectral shapes differ depending on the type of the lattice point. For the seeded points, we aim for the highest possible precision in terms of curve reconstruction, so as to lose as little information about the original constraint as possible. Regular points, however, do not have a prior constraint that their spectra must approximate. Therefore, in order to prevent color artifacts upon interpolation and to ensure smooth color transitions between metameric families, we mainly aim for their smoothness.
 
-In addition to the reconstructed shape, we must also take the behavior of the optimizer (i.e. how well it improves upon its prior coefficients under the given signal mapping technique) into account.
+In addition to the reconstructed shape, we must also take the behavior of the optimizer (i.e. how well it improves its prior coefficients) into account when choosing the signal mapping technique.
 
-We start by focusing on the accuracy of the reconstruction of atlas lattice points. We run an experiment across multiple color atlases (specifically the Pantone Color System, Munsell Book of Colors and the Macbeth Color Checker SG) and multiple CIE illuminants in which we compare the average and maximum round-trip errors of spectra under illuminants for all four techniques. Due to its continuous nature, we use the Delta E as the error measure.
+We start by focusing on the accuracy of the reconstruction of seeded points. We run an experiment across multiple color atlases (specifically the Pantone Color System, Munsell Book of Color and the Macbeth Color Checker SG) and multiple CIE illuminants in which we compare the average and maximum round-trip errors of spectra under illuminants for all four techniques. Due to its continuous nature, we use the Delta E as the error measure.
 
-In~\cref{sec:completeMomentError}, we provide all results obtained from these experiments. Note that using $n$ moments requires storing $n+1$ values in case mirroring is used (i.e. the moments are real) and $2n+1$ values otherwise (i.e. the moments are complex). As, from the implementation point of view, we are interested in the number of $coefficients$ needed for storage (i.e. the number of $double$ values per lattice point) rather than the number of moments, we surmise the contents of~\cref{sec:completeMomentError} in~\cref{table:comparisonMomentTechnique}, where we present the obtained errors according to the number of coefficients.
+In~\cref{sec:completeMomentError}, we provide all results obtained from these experiments. Note that using $m$ moments requires storing $m+1$ values in case mirroring is used (i.e. the moments are real) and $2m+1$ values otherwise (i.e. the moments are complex). As, from the implementation point of view, we are interested in the number of $coefficients$ needed for storage (i.e. the number of $double$ values per lattice point) rather than the number of moments, we surmise the contents of~\cref{sec:completeMomentError} in~\cref{table:comparisonMomentTechnique}, where we present the obtained errors according to the number of coefficients.
 
 \begin{table}[t]
 	\centering
@@ -68,11 +70,11 @@ In~\cref{sec:completeMomentError}, we provide all results obtained from these ex
 
 By observing~\cref{table:comparisonMomentTechnique}, we conclude that it is beneficial to mirror the signal. Although the non-mirroring technique performs slightly better for $c \le 9$, the input atlases often contain more complex spectra, where $c \le 9$ is insufficient. Additionally, the optimizer behaves similarly for both techniques, and therefore does not need to be accounted for.
 
-By applying the same principle when choosing whether to warp the signal, we assume that warping should provide better results. We put this theory to practice and test the performance of the optimizer on the chosen technique. Specifically, our test includes storing atlas entries with a ``sufficient'' number of coefficients (sufficiency of a representation is determined by the round-trip Delta E error under FL11 illuminant as in~\cref{ssec:noOfMoments}) and using these coefficients as prior for the fitting of closest lattice points. The original and fitted curves are then compared.
+\Cref{table:comparisonMomentTechnique} also suggests that warping should provide better results. We put this theory to practice and test the performance of the optimizer on the chosen technique. Specifically, our test includes storing atlas entries with a ``sufficient'' number of coefficients (sufficiency of a representation is determined by the round-trip Delta E error under FL11 illuminant as in~\cref{ssec:noOfMoments}) and using these coefficients as prior for the fitting of closest lattice points. The original and fitted curves are then compared.
 
 Unfortunately, the results are unsatisfactory. Occasionally, the optimizer fails in so as the fitted curve does not follow the original at all but rather ends up as a spiky spectrum susceptible to metameric artifacts. We show some of these results in~\cref{fig:warping_atlasLatticePoints}.
 
-Therefore, we resort to not warping the signal. Although the optimizer must process more coefficients than if the signal was warped (e.g. if seeding with the Munsell Book of Colors with the sufficiency conditions as in~\cref{ssec:noOfMoments}, $16$ coefficients are on average required for storing spectra, as opposed to $12$ if the signal is warped), the artifacts arising when warping the signal are completely eliminated (see~\cref{fig:warping_atlasLatticePoints}). In addition, the average distance between the original and fitted spectra is substantially lower.
+Therefore, we resort to not warping the signal. Although the optimizer must process more coefficients than if the signal was warped (e.g. if seeding with the Munsell Book of Color with the sufficiency conditions as in~\cref{ssec:noOfMoments}, $16$ coefficients are on average required for storing spectra, as opposed to $12$ if the signal is warped), the artifacts arising when warping the signal are completely eliminated (see~\cref{fig:warping_atlasLatticePoints}). Additionally, the average difference between the shape of the original and fitted spectra is substantially lower.
 
 \begin{figure}[t]
 	\centering
@@ -87,22 +89,22 @@ Therefore, we resort to not warping the signal. Although the optimizer must proc
 		\label{fig:warping_alp_neutral50}
 	\end{subfigure} \hspace{0.1em}
 	\begin{subfigure}[t]{0.32\textwidth}
-	\includegraphics[width=\linewidth]{img/results_warping_red.png}
-	\caption{``red'' patch}
-	\label{fig:warping_alp_red}
+		\includegraphics[width=\linewidth]{img/results_warping_red.png}
+		\caption{``red'' patch}
+		\label{fig:warping_alp_red}
 	\end{subfigure} \hspace{0.1em}
 	\begin{subfigure}[t]{0.32\textwidth}
 		\includegraphics[width=\linewidth]{img/results_warping_black.png}
 		\caption{``black'' patch}
 		\label{fig:warping_alp_black}
 	\end{subfigure}
-	\caption{Failure of warping when fitting atlas lattice points, shown on patches from the Macbeth Color Chart}
+	\caption{Failure of warping when fitting seeded points, shown on patches of the Macbeth Color Chart}
 	\label{fig:warping_atlasLatticePoints}
 \end{figure}
 
-For the regular lattice points, we present a similar comparison of these two methods in~\cref{fig:warping_regularPoints}, where we seed cubes of different sizes with distinct atlases and analyze the spectra at specific points. Not warping the signal is superior to warping even in this case, as it creates smoother spectra with less sharp edges. 
+For the regular points, we present a similar comparison of these two methods in~\cref{fig:warping_regularPoints}, where we seed cubes of different sizes with distinct atlases and analyze the spectra at specific points. Not warping the signal is superior to warping even in this case, as it creates smoother spectra with less sharp edges. 
 
-As we eventually decide on using only 3 coefficients per regular lattice points (see~\cref{ssec:noOfMoments}), and for that purpose, even warping works reasonably well, we do not necessarily need to account for regular lattice points when choosing whether to warp the signal. However, regardless, all the presented evidence points to the superiority of non-warping.
+As we eventually decide on using only 3 coefficients for regular points (see~\cref{ssec:noOfMoments}), and for that purpose, even warping works reasonably well, we do not necessarily need to account for regular points when choosing whether to warp the signal. However, regardless, all the presented evidence points to the superiority of non-warping.
 
 \begin{figure}[t]
 	\centering
@@ -126,13 +128,13 @@ As we eventually decide on using only 3 coefficients per regular lattice points 
 		\caption{$c=7, cd=16$,\\$RGB=(102, 17, 153)$,\\ fitted from middle}
 		\label{fig:warping_regularPoints_m7_cd16}
 	\end{subfigure} 
-	\caption{Comparison of warping and non-warping when used for fitting regular atlas entries. Note that the figures are illustrative, as they were created with an older version of the cube and therefore may not correspond to the current results.}
+	\caption{Comparison of warping and non-warping when used for fitting regular points. Note that the figures are illustrative, as they were created with an older version of the cube and therefore may not exactly correspond to the current results.}
 	\label{fig:warping_regularPoints}
 \end{figure}
 
-To justify the failures of warping, we analyze its behavior during round-trips in comparison to that of not warping. In~\cref{fig:resultsWarping}, we present a few such examples on different curves with different number of coefficients. We can clearly observe the behavior for which warping was designated --- while the slight waves in the middle of the curve (at around 550nm) are reconstructed almost perfectly, the edges of the curve (i.e. the part of the curve leading up to 450nm and from 650nm) are flat and attain constant values.
+To justify the failures of warping, we analyze its behavior during round-trips in comparison to that of not warping. In~\cref{fig:resultsWarping}, we present a few such examples on different curves with different number of coefficients. We can clearly observe the behavior for which warping was designated --- while the slight waves in the middle of the curve (at around 550nm) are reconstructed almost perfectly, the edges of the curve (i.e. the part of the curve up to 450nm and from 650nm) are flat and attain constant values.
 
-Therefore, if warping the signal, the optimizer has very little influence on the edges of the curve. For that reason, it opts for optimizing only its middle, which might result in amplifying the already created sinusoidal-shapes.
+Therefore, if warping the signal, the optimizer has very little influence on the edges of the curve. For that reason, it opts for optimizing only its middle, which might result in amplifying the already created sinusoidal-like shapes.
 
 By not warping the signal, on the other hand, the optimizer focuses on the spectra as a whole and is therefore less prone to spiky artifacts.
 
@@ -166,44 +168,30 @@ Therefore, we conclude that mirroring, but not warping the signal is the optimal
 		\caption{``foliage'' patch, $c = 12$}
 		\label{fig:resultsWarping_foliage}
 	\end{subfigure}
-	\caption{Comparison between the warped and non-warped reconstructed signal shown on multiple patches of the Munsell Book of Colors}
+	\caption{Comparison between the warped and non-warped reconstructed signal shown on multiple patches of the Munsell Book of Color. In all cases, the signal is mirrored.}
 	\label{fig:resultsWarping}
 \end{figure}
 
 \subsection{Number of moments} \label{ssec:noOfMoments}
 
-Another important parameter to determine is the number of moments (or coefficients) with which to store spectra at both atlas lattice points and regular lattice points.
+Another important parameter to determine is the number of moments (or coefficients) with which to store spectra at both seeded points and regular points.
 
-We start by analyzing the atlas lattice points. Specifically, we focus on the number of coefficients with which to store atlas entries in the second step of our implementation (see~\cref{ssec:cubeSeeding}), as those are the coefficients that are then used as prior for atlas lattice points. Naturally, we wish for the reconstruction to be as precise as possible, however, we want to prevent unnecessarily high coefficient counts both to avoid high memory utilization and to simplify the run of the optimizer.
+We start by analyzing the seeded points. Specifically, we focus on the number of coefficients with which to store constraints in the second step of our implementation (see~\cref{ssec:cubeSeeding}), as those are the coefficients that are then used as prior for seeded points. Naturally, we wish for the reconstruction to be as precise as possible, however, we want to prevent unnecessarily high coefficient counts both to avoid high memory utilization and to simplify the run of the optimizer.
 
 \begin{figure}[t!]
 	\centering
 	\includegraphics[width=0.6\linewidth]{img/results_noOfMoments_deltaE.png}
-	\caption{The average and maximum Delta E error achieved by round-trips, surmised from~\cref{table:comparisonMomentTechnique}}
+	\caption{The average and maximum Delta E error achieved by round-trips, surmised from~\cref{table:completeMomentError}}
 	\label{fig:results_noOfMoments_deltaE}
 \end{figure}
 
-By observing~\cref{fig:results_noOfMoments_deltaE}, we see that the Delta E error obtained by round-trips under the CIE illuminants stabilizes at $m=20$, i.e. $c=21$. As the curve precision does not worsen by adding more coefficients to the representation, storing all atlas entries with 21 coefficients might seem to be the optimal solution. Such approach is, however, wasteful for multitude of smooth, simple spectra.
+By observing~\cref{fig:results_noOfMoments_deltaE}, we see that the Delta E error obtained by round-trips under the CIE illuminants stabilizes at $m=20$, i.e. $c=21$. As the curve precision does not worsen by adding more coefficients to the representation, storing all constraints with 21 coefficients might seem to be the optimal solution. Such approach is, however, wasteful for smooth, simple spectra.
 
-Therefore, we decide to store each spectrum with only the necessary amount of coefficients. We obtain this number for each atlas entry iteratively --- starting from $c=4$, we check whether the coefficient count is sufficient, and, if not, we increase it and move on to the next iteration, repeating this process up to $m=21$.
+Therefore, we decide to store each spectrum with only the necessary amount of coefficients. We obtain this number for each constraint iteratively --- starting from $c=4$, we check whether the coefficient count is sufficient, and, if not, we increase it and move on to the next iteration, repeating this process up to $m=21$.
 
 We determine the sufficiency of a coefficient representation by picking one of the most error-prone illuminants and determining the round-trip error under said illuminant. If the error falls below a certain, pre-defined threshold, we declare the representation sufficient.
 
-To determine which illuminant to use, we performed an experiment in which we computed the average number of coefficients required to achieve a specific error for a set of spectra. We then compared these values for all elements on the list of CIE illuminants (again excluding the E and D73 illuminants). By the assumption that these results give us a rough approximation of the average error, we concluded that the illuminant with the highest coefficient count is the most error-prone.
-
-We present the results of our experiment in~\cref{table:sufficientCoefficientIlluminants}. We use an error of $\Delta E_{ab}^*=0.1$ due to the coefficient count variability under it, but any other would give similar results in terms of the order of the illuminants' coefficient counts.
-
-Since the FL11 illuminant requires the highest number of coefficients, we use it for our purposes, and move on to examining the optimal threshold.
-
-Surprisingly, utilizing the Delta E error in our iterative process of acquiring coefficients did not provide as satisfactory results as expected --- the entries represented with high number of coefficients ($c \ge 20$) were often unnecessarily accurate, while the entries represented with low number of coefficients ($c \le 10$) often lacked precision. Therefore, we decided to compute the error as an  absolute difference over all three RGB components, which outperformed both the Delta E error and even the Euclidean error in the RGB space (which was prone to similar, but less noticeable, behavior than the Delta E error). We set the threshold to $0.1$ for an RGB range of $(0,255)$, as we found it to perform well when tested for the actual uplifting. 
-
-Although we attribute the failure of Delta E to its non-linearity, we have not yet obtained evidence as to support this claim.
-
-Our approach for determining the sufficiency of coefficients is definitely not flawless. Firstly, neither the threshold, nor the computation of the error have been properly examined, which implies that there may be other, more suitable options. Secondly, since we examine only 18 CIE illuminants, there is a high chance that other, more error-prone, exist.
-
-Even the assumption that the average coefficient count determines the worst-performing illuminant falls short. As we have come across multiple atlas entries that attain the highest color error under an illuminant other than FL11, checking whether the error satisfies the threshold for all illuminants might be a more effective approach.
-
-Furthermore, even if we were to perfect our method, there exist a lot more, vastly different approaches that might be used. However, their exploration and analysis is not within the scope of this thesis, and, as our method produces reasonable results, we leave it for future work.
+To determine which illuminant to use, we performed an experiment in which we computed the average number of coefficients required to achieve a specific error for a set of spectra. We then compared these values for all illuminants from the list of CIE illuminants (excluding the E and D73 illuminants, as they are not a part of the ART database). By the assumption that these results give us a rough approximation of the average error, we concluded that the illuminant with the highest coefficient count is the most error-prone.
 
 \begin{table}[t]
 	\newcolumntype{?}{!{\vrule width 1.5pt}}
@@ -226,9 +214,23 @@ Furthermore, even if we were to perfect our method, there exist a lot more, vast
 	\label{table:sufficientCoefficientIlluminants}
 \end{table}
 
-Finding the sufficient coefficient count for regular lattice points is a lot more straightforward than for the atlas lattice points. We remind that the only requirement is for the spectra to be smooth, so as to avoid interpolation-caused artifacts. This property is especially important if two significantly different, spiky atlas entries are fitted in voxels close to each other. Propagating their original shapes during the cube fitting process would, under a different illuminant, create a noticeable color boundary, which is undesired.
+We present the results of our experiment in~\cref{table:sufficientCoefficientIlluminants}. We use an error of $\Delta E_{ab}^*=0.1$ due to the coefficient count variability under it, but any other would give similar results in terms of the order of the illuminants' coefficient counts.
 
-Figure~\cref{fig:warping_regularPoints} already suggests that using less coefficients might benefit our smoothness requirement. We put this theory to test by comparing spectra of regular lattice points fitted with a different number of coefficients in cubes of otherwise identical parameters. We present some of the results in~\cref{fig:noOfMoments_regularPoints}.
+Since the FL11 illuminant requires the highest number of coefficients, we use it for our purposes, and move on to examining the optimal threshold.
+
+Surprisingly, utilizing the Delta E error in our iterative process of acquiring coefficients did not provide as satisfactory results as expected --- the entries represented with high number of coefficients ($c \ge 20$) were often unnecessarily accurate, while the entries represented with low number of coefficients ($c \le 10$) often lacked precision. Therefore, we decided to compute the error as an absolute difference over all three RGB components, which outperformed both the Delta E error and even the Euclidean error in the RGB space (which was prone to similar, but less noticeable, behavior than the Delta E error). We set the threshold to $0.1$ for an RGB range of $(0,255)$. For most of the constraints, such precision is hardly necessary, and could be decreased if we were to focus on memory utilization. However, as the goal of this thesis is to properly assess the accuracy of the uplifting process, we do not concern ourselves with the slight memory overhead.
+
+Although we attribute the failure of Delta E to its non-linearity, we have not yet obtained evidence as to support this claim.
+
+Our approach for determining the sufficiency of coefficients is definitely not flawless. Firstly, neither the threshold, nor the computation of the error have been properly examined. Although our choice of the threshold is purposefully low so as to guarantee proper reconstruction, this might be resulting in an unnecessary memory overhead. Secondly, since we examine only 18 CIE illuminants, there is a high chance that other, more error-prone, exist.
+
+Even the assumption that the average coefficient count determines the worst-performing illuminant falls short. As we have come across multiple atlas entries that attain the highest color error under an illuminant other than FL11, checking whether the error satisfies the threshold for all illuminants might be a more effective approach.
+
+Furthermore, even if we were to perfect our method, there exist a lot more, vastly different approaches that might be used. However, their exploration and analysis is not within the scope of this thesis, and, as our method produces reasonable results, we leave it for future work.
+
+Finding the sufficient coefficient count for regular points is a lot more straightforward than for the seeded points. We remind that the only requirement is for the spectra to be smooth, so as to avoid interpolation-caused artifacts. This property is especially important if two constraints from different metameric families seed voxels close to each other. Propagating their original shapes during the cube fitting process would, under a different illuminant, create noticeable color artifacts, which is undesired.
+
+\Cref{fig:warping_regularPoints} already suggests that using less coefficients might benefit our smoothness requirement. We put this theory to test by comparing spectra of regular points fitted with a different number of coefficients in cubes of otherwise identical parameters. We present some of the results in~\cref{fig:noOfMoments_regularPoints}.
 
 \begin{figure}[t]
 	\centering
@@ -245,23 +247,23 @@ Figure~\cref{fig:warping_regularPoints} already suggests that using less coeffic
 		\includegraphics[width=\linewidth]{img/results_noOfMoments_regularPts_2.png}
 		\caption{$RGB=(98.7, 205.6, 41.1)$,\\ fitting round $= 9/17$}
 	\end{subfigure} 
-	\caption{The effects of various choices for the regular lattice points' coefficient count on the shape of their spectra.}
+	\caption{The effects of multiple choices for the regular points' coefficient count on the shape of their spectra.}
 	\label{fig:noOfMoments_regularPoints}
 \end{figure}
 
-Our assumptions have proven to be correct. By using less coefficients, we limit the optimizer's ability to reconstruct complicated spectra, therefore forcing it to create smooth, simple shapes. Specifically, we decide on using 3 coefficients --- as their shapes are sufficient, using more is unnecessary, but 2 were unable to recreate shapes and occasionally ended up reconstructing constant, straight lines.
+Our assumptions have proven to be correct. By using less coefficients, we limit the degrees of freedom of the optimizer, therefore forcing it to create smooth, simple shapes. Specifically, we decide on using 3 coefficients --- using more is unnecessary, but 2 are unable to recreate some of the shapes and occasionally end up reconstructing constant, straight lines.
 
-Additional benefit of using only 3 coefficients per regular lattice point (as opposed to using a higher number) is the lower run-time of cube fitting, as well as less optimizer failures and therefore no need for invocation of heuristic improvements.
+Additional benefit of using only 3 coefficients per regular point (as opposed to using a higher number) is the lower run-time of cube fitting, as well as less optimizer failures and therefore no need for invocation of heuristic improvements.
 
 \subsection{Cost functions} \label{ssec:costFunctions}
 
-In addition to the moment storage technique, another thing greatly affecting the outcome of the fitting are the cost functions of optimizer.
+In addition to the moment storage technique, another thing greatly affecting the outcome of the fitting are the cost functions of the optimizer.
 
 For the fitting of the sigmoids, Borgtool uses three cost functions, or \emph{residuals}, each of them specifying the absolute color difference in one axis of the RGB cube. Such an approach outperforms both the Euclidean color distance and even the Delta E difference --- the higher the number of meaningful residuals, the more information can the optimizer deduce about the coefficients' behavior, which, in turn, results in faster and more precise convergence.
 
 As this approach performs rather decently in terms of both time complexity and the obtained results for the sigmoids, we try it out for the purposes of our optimization as well. 
 
-In case of fitting of the regular lattice points (see~\cref{ssec:cubeFitting}), the obtained results are satisfactory, both for the fitting in the second round (i.e. after the ``recalculation'') and in the latter rounds (see~\cref{fig:costFunctionsRegularFitting}). The resulting curves are smooth, they evaluate to the desired RGB values, and the run-time is even better than for the sigmoids. Therefore, for the regular lattice points, we utilize this approach.
+In case of fitting of the regular points (see~\cref{ssec:cubeFitting}), the obtained results are satisfactory, both for the fitting in the second round (i.e. after the ``coefficient recalculation'') and in the latter rounds (see~\cref{fig:costFunctionsRegularFitting}). The resulting curves are smooth, they evaluate to the desired RGB values, and the execution time is rather fast. Therefore, we utilize this approach for the regular points.
 
 \begin{figure}[t]
 	\centering
@@ -269,22 +271,22 @@ In case of fitting of the regular lattice points (see~\cref{ssec:cubeFitting}), 
 		\includegraphics[width=\linewidth]{img/cost_functions_regular_legend.png}
 	\end{subfigure} \\
 	\begin{subfigure}[t]{0.45\textwidth}
-	\includegraphics[width=\linewidth]{img/cost_functions_regular_round2.png}
-	\caption{Fitting in the second round, i.e. the prior coefficients are the result of ``recalculation'' of the fitted coefficients of an atlas lattice point}
-	\label{fig:costFunctionsRegularRound2}
+		\includegraphics[width=\linewidth]{img/cost_functions_regular_round2.png}
+		\caption{Fitting in the second round, i.e. the prior coefficients are the result of ``recalculation'' of the fitted coefficients of a seeded point}
+		\label{fig:costFunctionsRegularRound2}
 	\end{subfigure} \hspace{0.1em}
 	\begin{subfigure}[t]{0.45\textwidth}
 		\includegraphics[width=\linewidth,height=0.2\textheight]{img/cost_functions_regular_round8.png}
-		\caption{Fitting in round 8/20, where the prior spectrum is that of a regular lattice point}
+		\caption{Fitting in round 8/20, where the prior coefficients are that of a regular point}
 		\label{fig:costFunctionsRegularRound8}
 	\end{subfigure} 
-	\caption{Fitting of regular lattice points with 3 RGB cost functions}
+	\caption{Fitting of regular points with 3 RGB cost functions}
 	\label{fig:costFunctionsRegularFitting}
 \end{figure}
 
-However, for fitting the atlas lattice points, this method is unsatisfactory. Although it terminates as successful (as the RGB of the resulting curve is within the fitting threshold of the target RGB), the reflectance curve takes on a sinusoidal shape with a rather high amplitude, therefore losing resemblance to the original curve. This is due to definition of coefficients, which are, in their nature, Fourier coefficients, and are therefore prone to exhibiting this type of behavior. We show an example of this in~\cref{fig:resultsCostFunctions} on the magenta plot. 
- 
-Note that we compare the fitted spectra not with the original atlas spectra, but with the spectra that is reconstructed from the original's coefficients to keep track of the optimizer's ability to mimic its input.
+However, for fitting the seeded points, this method is unsatisfactory. Although it terminates as successful (as the RGB of the resulting curve is within the fitting threshold of the target RGB), the reflectance curve takes on a sinusoidal-like shape with a rather high amplitude, therefore losing resemblance to the original curve. This is due to definition of coefficients, which are, in their nature, Fourier coefficients, and are therefore prone to exhibiting this type of behavior. We show an example of this in~\cref{fig:resultsCostFunctions} on the magenta plot. 
+
+Note that, in order to keep track of the optimizer's ability to mimic its input, we compare the fitted spectra not with the original spectra of the constraints, but with the spectra that is reconstructed from the original's coefficients.
 
 \begin{figure}[t]
 	\centering
@@ -295,32 +297,32 @@ Note that we compare the fitted spectra not with the original atlas spectra, but
 	\end{subfigure} \\
 	\begin{subfigure}[t]{0.45\textwidth}
 		\includegraphics[width=\linewidth]{img/results_costFunctions_orange.png}
-		\caption{``orange'' patch of the MCC, $c = 8$, $d = 11.84$}
+		\caption{``orange'' patch of the MCC\\$c = 8$, $d = 11.84$}
 		\label{fig:resultsCostFunctions_orange}
 	\end{subfigure} \hspace{0.1em}
 	\begin{subfigure}[t]{0.45\textwidth}
 		\includegraphics[width=\linewidth]{img/results_costFunctions_mcb0706.png}
-		\caption{5YR 7/6 patch of the MBC, $c = 14$, $d = 5.85$}
+		\caption{5YR 7/6 patch of the MBC\\$c = 14$, $d = 5.85$}
 		\label{fig:resultsCostFunctions_mcb0706}
 	\end{subfigure} 
 	\vspace{0.5em}\\
 	\begin{subfigure}[t]{0.45\textwidth}
 		\includegraphics[width=\linewidth]{img/results_costFunctions_mcb0725.png}
-		\caption{N 7.25 patch of the MBC, $c = 20$, $d = 12.67$}
+		\caption{N 7.25 patch of the MBC\\$c = 20$, $d = 12.67$}
 		\label{fig:resultsCostFunctions_mcb0725}
 	\end{subfigure} \hspace{0.1em}
 	\begin{subfigure}[t]{0.45\textwidth}
 		\includegraphics[width=\linewidth]{img/results_costFunctions_darkskin.png}
-		\caption{``dark skin'' patch of the MCC, $c = 12$, $d = 11.55$}
+		\caption{``dark skin'' patch of the MCC\\$c = 12$, $d = 11.55$}
 		\label{fig:resultsCostFunctions_darkskin}
 	\end{subfigure}
-	\caption{Comparison between the RGB cost functions and our cost functions for fitting atlas lattice points}
+	\caption{Comparison between the RGB cost functions and our cost functions for fitting seeded points. $c$ represents the coefficient count, while $d$ is the Euclidean distance between the target and the constraint RGB.}
 	\label{fig:resultsCostFunctions}
 \end{figure}
 
 We therefore conclude that we must incorporate the requirement of curve shape similarity into our cost functions. Following, we review the approaches we attempted along with their outcomes.
 
-The first idea was to implement an approach similar to that for determining the number of coefficients with which to store atlas entries (see~\cref{ssec:noOfMoments}), i.e. to utilize the color error under a fluorescent illuminant (specifically, FL11). We defined three additional cost functions, each specifying the difference between the original and the reconstructed curve's RGB under the FL11 illuminant in one of the axes. If their values fell below a specific threshold, we terminated the fitting process as successful, if not, we increased the threshold and tried again.
+The first idea was to implement an approach similar to that for determining the number of coefficients with which to store constraints (see~\cref{ssec:noOfMoments}), i.e. to utilize the color error under a fluorescent illuminant (specifically, FL11). We defined three additional cost functions, each specifying the difference between the original and the reconstructed curve's RGB under the FL11 illuminant in one of the axes. If their values fell below a specific threshold, we terminated the fitting process as successful, if not, we increased the threshold and tried again.
 
 Although this approach was successful on average (the average threshold was around $t = 0.025$), occasionally, the threshold often needed to be increased to values so high that it became obsolete (i.e. $t = 1$). Using only one error, either the Euclidean distance or the Delta E error, caused similar issues.
 
@@ -330,13 +332,13 @@ However, although this method definitely outperformed the previous one, it did n
 
 As we suspected that the failures of the optimizer with lower threshold values were caused by the abundance of cost functions, we summed up their values and saved them into a single residual, which, when divided by the number of spectral samples, represented the average absolute error per sample.
 
-As the importance of curve samples in terms of proper color reconstruction is mainly placed on their middle (at around 550nm), we attempted to add a heuristic-based weighting factor in an effort to focus on minimizing the distance between the two curve there. However, we did not succeed in improving our results, and we therefore dropped the experiment and examined the optimizer's behavior without weighting the values.
+As the importance of curve samples in terms of proper color reconstruction is mainly placed on their middle (at around 550nm), we attempted to add a heuristic-based weighting factor in an effort to focus on minimizing the distance between the two curves in that place. However, we did not succeed in improving our results, and we therefore dropped the experiment and examined the optimizer's behavior without weighting the values.
 
-The proposed method substantially outperformed the previous ones. The threshold error ended up being only about $t = 0.0045$, and, of yet, no entry requiring $d > 0.03$ has been encountered. Therefore, we concluded that the optimal solution to our problem is to set 4 residuals, 3 specifying the RGB difference, and 1 specifying the average distance per sample.
+The proposed method substantially outperformed the previous ones. The threshold error ended up being only about $t = 0.0045$, and, of yet, no entry requiring $d > 0.03$ has been encountered. Therefore, we concluded the experiments by defining 4 residuals, 3 of them specifying the RGB difference, and 1 specifying the average distance per sample.
 
-We present some of the results achieved with our cost functions in~\cref{fig:resultsCostFunctions}, where we compare them to fitting with RGB cost functions only. In~\cref{fig:resultsCostFunctions_mcb0725} and~\cref{fig:resultsCostFunctions_darkskin}, we specifically focus on the most problematic spectra with the highest distance $d$ between the atlas lattice point and the atlas entry.
+We present some of the results achieved with our cost functions in~\cref{fig:resultsCostFunctions}, where we compare them to fitting with RGB cost functions only. In~\cref{fig:resultsCostFunctions_mcb0725} and~\cref{fig:resultsCostFunctions_darkskin}, we specifically focus on the most problematic spectra with the highest distance $d$ between the seeded point and the constraint.
 
-Although our approach substantially reduces the appearance of sinosidual-like behavior, it does not diminish it completely. It can be observed especially for atlas lattice points with $c > 14$ (see~\cref{fig:resultsCostFunctions_mcb0725}). This is due to the fact that we optimize only the first 4 coefficients, which, in their nature, are prone to creating such patterns.
+Although our approach substantially reduces the appearance of sinosidual-like shapes, it does not diminish it completely. We can observe it especially in~\cref{fig:resultsCostFunctions_mcb0725}. In many cases such as this, however, the deficiency arises mainly due to the imperfections of the moment-based representation, which is, on its own, incapable of reconstructing constant lines due to the nature of the coefficients.
 
 Another drawback of our approach is the substantially greater time complexity, especially if improvement heuristics need to be applied. By examining the scope of the optimizer and utilizing its options further, or maybe even resorting to a different method of optimization, we might be able to improve upon both the time complexity and the resulting spectral shape.
 
@@ -346,7 +348,6 @@ However, as the runtime is not the focus of this thesis and as the resulting sha
 
 In the following, we evaluate the accuracy of our technique when used for uplifting constraints and compare its results to the sigmoid-based uplift as defined by~\citet{upsamplingJakobHanika}. We then assess its performance when uplifting the RGB gamut as a whole.
 
-All the data of color atlases and illuminants used in our experiments is provided by ART~\cite{ART}.
 
 \begin{figure}[ht!]
 	\centering
@@ -442,14 +443,13 @@ All the data of color atlases and illuminants used in our experiments is provide
 	\label{fig:results_uplift_munsell}
 \end{figure}
 
-
 \subsection{Constraint uplifting accuracy}
 
-We tested the accuracy of our proposed constrained uplifting approach on the Munsell Book of Color (MBOC), which we utilized as a constraint set for a $32^3$-sized coefficient cube for the sRGB color space. Of the 1598 entries in the MBOC, 1396 are in the sRGB gamut: therefore, our experiments only included those. If a larger RGB space (such as e.g. Adobe RGB) were used as input space, the full number of atlas entries could be used: working with sRGB was not due to any restrictions in our proposed technique, but only done to stay within the standard RGB space of graphics. Furthermore, in a $32^3$-sized coefficient cube, 82 of the atlas entries can not be used as seeds due to the limitation that only one seed can be present in each voxel. Simply increasing the cube resolution would allow to use the 82 missing entries: again, using a $32^3$ coefficient cube was not done due to any intrinsic restrictions of our technique, but just to save pre-computation time, and stay with a nice power of two as cube dimension.
+We tested the accuracy of our proposed constrained uplifting approach on the Munsell Book of Color (MBOC), which we utilized as a constraint set for a $32^3$-sized coefficient cube for the sRGB color space. Of the 1598 entries in the MBOC, 1396 are in the sRGB gamut: therefore, our experiments only included those. If a larger RGB space (such as e.g. Adobe RGB) were used as input space, the full number of atlas entries could be used: working with sRGB was not due to any restrictions in our proposed technique, but only done to stay within the standard RGB space of graphics. Additionally, note that 82 of the atlas entries are not utilized as constraints due to collisions occurring inside voxels, which are unavoidable in a cube with such a low dimension.
 
-We compared the difference between the uplifted spectra to the original ones under a spiky, error-prone illuminant via the standard CIE Delta E color difference metric. Specifically, we present the results under the FL11 illuminant, as we determined it to be the illuminant most susceptible to metameric failures (from the ART databse) --- under D65, the error was negligible throughout the whole spectrum.
+We compared the difference between the uplifted spectra to the original ones under a spiky, error-prone illuminant (specifically, FL11) via the standard CIE Delta E color difference metric --- under D65, the error was negligible throughout.
 
-The average round-trip error was just a Delta E of $0.21$. As the maximum error perceivable by a standard observer is $\Delta E<1$~\cite{maxColorDifference}, this value is negligible and can be regarded as highly satisfactory. Of the 1314 entries, only 22 were found to return a $\Delta E > 1$: all of these were RGB values extremely close to $(0,0,0)$. 
+The average round-trip error was just a Delta E of $0.21$. As the maximum error perceivable by a standard observer is $\Delta E<1$~\cite{maxColorDifference}, this value is negligible and can be regarded as highly satisfactory. Of the 1314 entries, only 22 were found to return a $\Delta E > 1$: all of these had RGB values extremely close to $(0,0,0)$. 
 
 \begin{figure}[t!]
 	\centering
@@ -460,7 +460,7 @@ The average round-trip error was just a Delta E of $0.21$. As the maximum error 
 	\label{fig:seeding_accuracy_dark}
 \end{figure}
 
-An example of this behavior in the dark region of the RGB cube can be observed in~\cref{fig:results_uplift_munsell}. The reason for it is the inadequate fitting of seeded points by the optimizer. This behavior was already present in~\cref{ssec:costFunctions} in~\cref{fig:resultsCostFunctions}, where we concluded that it is due to both the moment representation's inability to flawlessly reconstruct constant curves, and the optimizer's tendency to amplify this deficiency. As the spectral shapes of the dark colors resemble almost constant lines close to zero, it makes sense that the optimiser would primarily fail there.
+An example of this behavior in the dark region of the RGB cube can be observed in~\cref{fig:results_uplift_munsell}. The reason for it is the inadequate fitting of seeded points by the optimizer. This behavior was already present in~\cref{ssec:costFunctions} in~\cref{fig:resultsCostFunctions}, where we concluded that it is due to both the moment representation's inability to flawlessly reconstruct constant curves, and the optimizer's tendency to amplify this deficiency. As the spectral shapes of the dark colors resemble almost constant lines close to zero, it makes sense that the optimizer would primarily fail there.
 
 In~\cref{fig:seeding_accuracy_dark} and~\cref{fig:seeding_accuracy_other}, we provide comparisons of curves of the original spectra, the seeded spectra (labeled \emph{round-trip}, i.e. it represents the direct reconstruction from the moments used to store the original spectra) and the uplifted spectra (i.e. the result of querying the final coefficient cube, including interpolation within the voxel the RGB value lies in). Ideally, all three curves should be identical: a difference between ``original'' and ``round-trip'' points to the deficiency of the moment-based spectral reconstruction, while a difference between ``round-trip'' and ``uplift'' indicates a drawback in the optimizer. We can observe that, while for darker colors (see~\cref{fig:seeding_accuracy_dark}), the errors are mainly due to inadequacies of the optimizer, slight curve deviations for brighter colors (see~\cref{fig:seeding_accuracy_other}) are usually due to imperfections of the moment representation.
 
@@ -483,6 +483,8 @@ Unfortunately, we have encountered issues when testing the accuracy of our syste
 
 For this reason, in order to demonstrate the correctness of our model on an example scene in~\cref{fig:results_art_scene}, we do not use the spectrally rendered textures but rather our own, manually-created, which perfectly match the desired RGB values. As the method was not tested in other renderers, we attribute the need for such a process to the inaccuracy of ART. 
 
+Due to the inaccuracies during rendering, we do not provide difference images in the actual scene in~\cref{fig:results_art_scene}. However, our contribution is still visible. In the brighter patches of the middle page (050GY), we can observe how our methods preserves the breaking down of the gradients, which are smooth for the sigmoid uplift. For the rightmost page (100Y), both our and the original spectral render display a green tint for their darker patches, which is eliminated in the sigmoid uplift.
+
 \begin{figure}[ht]
 	\centering
 	{\sffamily
@@ -495,7 +497,7 @@ For this reason, in order to demonstrate the correctness of our model on an exam
 			\includegraphics[width=.29\linewidth]{img/results_art_sigmoids_d65.png}
 			& 
 			\includegraphics[width=.29\linewidth]{img/results_art_constrained_d65.png}
-			\vspace{1em} \\
+			\vspace{0.5em} \\
 			\raisebox{0.5cm}[0pt][0pt]{\parbox[c][0pt][c]{0cm}{\hspace{-1.5em}\rotatebox{90}{FL12}\\[10pt]}\par}
 			\includegraphics[width=.29\linewidth]{img/results_art_original_fl12.png}
 			&
@@ -504,7 +506,7 @@ For this reason, in order to demonstrate the correctness of our model on an exam
 			\includegraphics[width=.29\linewidth]{img/results_art_constrained_fl12.png}
 		\end{tabular}
 	}
-	\caption{Comparison of the sigmoid-based uplift to the constrained uplift on a scene rendered in ART~\cite{ART}. Pages in scene are (from the left): 050Y, 050GY, 100Y.}
+	\caption{Comparison of the sigmoid-based uplift to the constrained uplift on a scene rendered in ART~\cite{ART}. Pages in scene are (from the left): 100Y, 050GY, 050Y.}
 	\label{fig:results_art_scene}
 \end{figure}
 
@@ -546,7 +548,7 @@ We first compared their performance in terms of color reconstruction upon uplift
 	\vspace{-1em}
 \end{figure}
 
-In~\cref{fig:uplift_colourful_texture}, we demonstrate that our approach can properly uplift large regions of the RGB gamut simultaneously, without showing artifacts under varying illuminations. We provide multiple uplifts of a rainbow texture covering most of the RGB gamut, constrained with different constraint sets under various illuminants. Although a significant subset of voxels has been seeded, some of them with spiky spectra (especially for the Pantone color atlas), none of these renderings exhibits significant artifacts. Note that all uplifts were performed with $32^3$-sized cubes, i.e. some of the constraints may not have been utilized due to collisions during seeding.
+In~\cref{fig:uplift_colourful_texture}, we demonstrate that our approach can properly uplift large regions of the RGB gamut simultaneously, without showing artifacts under varying illuminating conditions. We provide multiple uplifts of a rainbow texture covering most of the RGB gamut, constrained with different constraint sets under various illuminants. Although a rather large subset of voxels has been seeded, some of them with complex spectra (especially for the Pantone color atlas), none of these renderings exhibit significant artifacts. Note that all uplifts were performed with $32^3$-sized cubes, i.e. some of the constraints may not have been utilized due to collisions during seeding.
 
 \begin{figure}[ht]
 	\centering
@@ -579,12 +581,12 @@ In~\cref{fig:uplift_colourful_texture}, we demonstrate that our approach can pro
 \end{figure}
 
 
-\section{Performance and future work}
+\section{Performance}
 
 In this section, we evaluate the performance of our method in terms of both memory and execution time, and propose possible future work for their improvement.
 
-\subsection{Memory usage}
-The memory necessary for storing our cube depends on its resolution (i.e. the number of lattice points), which is, in turn, dependent on both the size of our constraint set and on the position of its spectra within the RGB cube. The Macbeth Color Checker (MCC), which contains only 24 entries that are spaced quite far apart from each other in the RGB space (with one of them falling outside of sRGB), requires as little as a $13^3$-sized cube. Due to the close proximity of some seeds, the 1396 sRGB entries of the Munsell Book of Color would require as much as 340 lattice points per axis for all seeds to fall into a unique voxel. Additionally, due to the rigid nature of an evenly spaced voxel grid, using a higher cube dimension does not necessarily imply more points that can be successfully seeded. Due to voxel edges being in different positions for different cube dimensions, increasing cube size might even have an adverse effect --- for example, while a cube of size $90^3$ is sufficient for the RAL Design atlas, in a $300^3$-sized cube, 1 point remains unfitted due to a voxel collision.
+\subsection{Memory usage} \label{ssec:memoryUsage}
+The memory necessary for storing our cube depends on its resolution (i.e. the number of lattice points), which is, in turn, dependent on both the size of our constraint set and on the position of its spectra in the RGB cube. The Macbeth Color Checker (MCC), which contains only 24 entries that are spaced quite far apart from each other in the RGB space (with one of them falling outside of sRGB), requires as little as a $13^3$-sized cube. Due to the close proximity of some seeds, the 1396 sRGB entries of the Munsell Book of Color would require as much as 340 lattice points per axis for all seeds to fall into a unique voxel. Additionally, due to the rigid nature of an evenly spaced voxel grid, using a higher cube dimension does not necessarily imply more points that can be successfully seeded. Due to voxel edges being in different positions for different cube dimensions, increasing cube size might even have an adverse effect --- for example, while a cube of size $90^3$ is sufficient for the RAL Design atlas, in a $300^3$-sized cube, 1 point remains unfitted due to a voxel collision.
 
 To store the coefficients of cube entries, we require 3 floating point values for all non-seeded points, and, on average, 16 floating point values per constraint. For the $340^3$-sized cube required for the proper coverage of the Munsell Book of Color, this would yield a size of over $450.35$MB. Although using less coefficients for storing constraints is possible, it would not noticeably improve the size of the cube --- even if we were to use 3 coefficients for all coefficient representations within the cube, the overall size would still be over $449.8$MB. That is a negligible improvement, as the overall size remains excessive --- after all, a seeding of the whole Munsell Book of Color requires only $1396$ voxels, which sums up to a maximum of $8\cdot1396$ lattice points. Additionally, while most of the regions of the cube are barely utilized, there exist some that have all of their voxels fitted, which might result in a lack of smooth color transitions within these regions.
 
@@ -592,9 +594,9 @@ We therefore conclude that, for the purposes of constrained spectral uplifting f
 
 \subsection{Execution time}
 
-Since our uplifting model is created prior to the rendering process, we divide the evaluation of the execution time into two parts --- the cube fitting process, and the rendering speed when utilizing our cube for uplifting purposes.
+Since our uplifting model is created prior to the rendering process, we separate the evaluation of the execution time of the cube fitting process from the evaluation of the rendering speed when utilizing our cube for uplifting purposes.
 
-We test the execution time of cube fitting on multiple sets of constraints in forms of color atlases, and present the results in~\cref{fig:evaluation_cube_fitting}, where we distinguish the \emph{seeding time} (i.e. the time spent on seeding and fitting of the atlas lattice points) and the \emph{fitting time} (i.e. the time spent on fitting the rest of the cube, i.e. the regular lattice points). All the experiments are performed on an Intel Core i7-8750H CPU (12 logical cores), and the size of each cube is $32^3$. Note that such cube resolution may be insufficient for the utilization of all constraints in a given atlas --- we therefore provide the \emph{seed count}, which represents the overall number of moment representations stored at atlas lattice points.
+We test the execution time of cube fitting on multiple sets of constraints in forms of color atlases, and present the results in~\cref{fig:evaluation_cube_fitting}, where we distinguish the \emph{seeding time} (i.e. the time spent on seeding and fitting of the seeded points) and the \emph{fitting time} (i.e. the time spent on fitting the rest of the cube, i.e. the regular points). All the experiments are performed on an Intel Core i7-8750H CPU (12 logical cores), and the size of each cube is $32^3$. Note that such cube resolution may be insufficient for the utilization of all constraints in a given atlas --- we therefore provide the \emph{seed count}, which represents the overall number of moment representations stored at seeded points.
 
 \begin{table}[h]
 	\centering
@@ -608,8 +610,8 @@ We test the execution time of cube fitting on multiple sets of constraints in fo
 		RAL Design Atlas & 1336		&43m 11s&9m 15s &52m 26s\\ 
 		Macbeth Color Chart SG	& 576	&27m 14s&8m 8s  &35m 22s\\ 
 		Macbeth Color Chart& 184 		&9m 29s &14m 17s&23m 46s\\ 
-		None & 1 		&0.08s&45m 5s &45m 6s\\
-		Sigmoid-based approach	&1 &0s&7m 16s &7m 16s\\
+		None & 0 		&0s&45m 6s &45m 6s\\
+		Sigmoid-based approach	&0 &0s&7m 16s &7m 16s\\
 		\hline
 	\end{tabular}
 	\caption{Fitting time of a $32^3$-sized coefficient cube for multiple color atlases.}
@@ -617,14 +619,40 @@ We test the execution time of cube fitting on multiple sets of constraints in fo
 	\vspace{-1em}
 \end{table}
 
-Due to the higher coefficient count and the strict requirements placed upon the shapes of the reconstructed spectral curves, the fitting of the atlas lattice points takes a lot longer than the fitting of the latter (on average, an atlas lattice point point takes $2.4$ seconds to fit, in comparison to the $0.03$ for regular lattice points). However, as the cube fitting process is multi-threaded, it benefits from multiple seeds evenly positioned across the RGB cube. This is particularly obvious when comparing the performance of the fitting of the Macbeth Color Charts and the fitting without constraints.
+Due to the higher coefficient count and the strict requirements placed upon the shapes of the reconstructed spectral curves, the fitting of the seeded points takes a lot longer than the fitting of the latter (on average, a seeded point point takes $2.4$ seconds to fit, in comparison to the $0.03$ for regular points). However, as the cube fitting process is multi-threaded, it benefits from multiple seeds evenly positioned across the RGB cube. This is particularly obvious when comparing the performance of the fitting of the Macbeth Color Charts and the fitting without constraints.
 
-None of these usage cases outperform the sigmoid-based cube in terms of fitting time. While our technique needs to use various complex mathematical operations, such as the application of Levinson's algorithm, Herglotz transform and multiple other conversion processes~\cite{trigonometricMomentsPaper}, not to mention the interpolation of metamers for lattice points with multiple representations, the sigmoid-based approach evaluates the spectral curve with as little as six floating point operations for any given wavelength~\cite{upsamplingJakobHanika}.
+None of these use-cases outperform the sigmoid-based cube in terms of fitting time. While our technique needs to use various complex mathematical operations, such as the application of Levinson's algorithm, Herglotz transform and multiple other conversion processes~\cite{trigonometricMomentsPaper}, not to mention the interpolation of metamers for lattice points with multiple representations, the sigmoid-based approach evaluates the spectral curve with as little as six floating point operations for any given wavelength~\cite{upsamplingJakobHanika}.
 
-This drawback of our technique also carries over to using our method during rendering. In order to properly evaluate the execution time, we perform two tests --- firstly, we compare the performance of the sigmoid-based cube with the performance of our non-constrained cube (in order to avoid the overhead of spectral reconstruction from higher-dimensional coefficient representations), and secondly, we provide measures of the execution time of the constrained uplift of the renders in~\cref{fig:results_uplift_munsell}. All experiments are performed on an Intel Xeon CPU E5-2680 v3 (48 logical cores), with $32^3$-sized cubes.
+This drawback of our technique also carries over to using our method during rendering. In order to properly evaluate the execution time, we perform two tests --- firstly, we compare the performance of the sigmoid-based cube with the performance of our non-constrained cube (in order to avoid the overhead of spectral reconstruction from higher-dimensional coefficient representations), and secondly, we provide measures of the execution time for the constrained uplift for the renders in~\cref{fig:results_uplift_munsell}. All experiments are performed on an Intel Xeon CPU E5-2680 v3 (48 logical cores), with $32^3$-sized cubes.
 
 For the latter experiments, the sigmoid-based approach performed, on average, $2.1$ times better than our constrained cubes. The performance overhead arising from constraining the uplifting process was expected. When used in a spectral renderer -- specifically, ART~\cite{ART} --- on a closely viewed texture of one of the pages of the Munsell Book of Color (that is, when pretty much all the pixels in the image correspond to the constraints), rendering times slow down by about a factor of $4$ when compared to the sigmoid uplift.
 
 For non-constrained uplifting, our method provides no benefits compared to the sigmoid-based approach, except perhaps that it creates slightly more varied spectral shapes than the plain sigmoid technique. Even when not constrained, uplifting of the colorful textures shown in~\cref{fig:uplift_colourful_texture} is $2.3$ times slower with our cube than with the sigmoid-based technique.
 
-That having been said, we wish to point out that so far, our focus was placed on the correctness and accuracy of the constrained uplift, i.e. our implementation of both the model creation and its utilization in a renderer does not include any real optimizations yet. In the future, these could be applied to the fitting process (by further exploiting the possibilities of the CERES solver, or, possibly, another optimization technique) and to the actual uplifting, which currently does not cache any intermediate values (such as the exponential moments) and therefore requires them to be unnecessarily re-computed during each uplift. We estimate that such optimizations could improve the performance up to a factor of two, both during fitting, and during rendering.
+That having been said, we wish to point out that so far, our focus was placed on the correctness and accuracy of the constrained uplift, i.e. our implementation of both the model creation and its utilization in a renderer does not include any real optimizations yet. In the future, these could be applied to the fitting process (by further exploiting the possibilities of the CERES solver, or, possibly, another optimization technique) and to the actual uplifting, which currently does not cache any intermediate values (such as the exponential moments) and therefore requires them to be unnecessarily re-computed during each uplift. We estimate that such optimizations could improve the performance up to a factor of two, both during fitting and during rendering.
+
+\section{Future work}
+
+In this chapter, we have already mentioned multiple deficiencies of our system. Following, we surmise the most important ones and outline their possible solutions:
+\begin{itemize}
+	\item{\emph{Cube structure}}
+	
+	As mentioned in~\cref{ssec:memoryUsage}, evenly spacing lattice points in the RGB cube is not the optimal approach, especially if the constraint set has a high number of spectra in evaluating to RGB values in close vicinity. In order to improve both the memory requirements and the resulting colorimetric properties, we suggest utilizing a dynamic structure capable of splitting the RGB space into variably-sized voxels according to the number of constraints, such as a kD-tree or an octree.
+	
+	\item{\emph{Implementation optimization}}
+	
+	In order to improve the performance of the uplifting process in a renderer, multiple optimizations could be added, such as storing intermediate values (e.g. exponential moments during spectral reconstruction), or perfecting the process of determining whether the voxel has been seeded prior to trilinear interpolation (see~\cref{sec:rendererIntegration}). Some of these optimization could also be included in the cube fitting process.
+	
+	\item{\emph{Sufficient moment count}}
+	
+	As the conditions for the sufficient moment count have not been properly examined and, for the purposes of this thesis, most often than not, higher count than required is used, the memory requirements could be further improved by selecting more suitable conditions. As a starting point, we suggest increasing the sufficiency threshold, but utilizing multiple distinct illuminants.
+	
+	\item{\emph{Fitting of the seeded points}}
+	
+	Currently, due to the optimizer's tendency to get stuck in local minima when presented with a high number of parameters, the fitting of the seeded points requires a lot of heuristic-based optimizations (see~\cref{ssec:startingPointsFitting}), which, in turn, take a lot of time and may not always produce the desired results. This could be solved by either further exploiting the possibilities of the CERES solver, or, possibly, utilizing another optimization technique.
+
+	\item{\emph{Unfitted points around $RGB\approx(255, 255, 255)$}}
+	
+	As mentioned in~\cref{ssec:cubeImprovement}, lattice points evaluating roughly to $RGB\approx(255, 255, 255)$ may, under specific conditions, fail the fitting process. As this is due to the inaccuracies of ART, we propose utilizing a different library for color conversion purposes.
+	
+\end{itemize}
