@@ -1,7 +1,7 @@
 \chapter*{Introduction}
 \addcontentsline{toc}{chapter}{Introduction}
 
-Over the last few years, the demand for physical accuracy of the rendering process has grown substantially. By providing the renderer with the capability to physically simulate light transport, we can recreate natural phenomena such as metamerism, fluorescence, polarization, etc\ldots~Such simulations require the internal color representation to be as close to the visible light's spectral power distribution as possible. However, the advantages of these representations are often not worth the complexity of their implementation.
+Over the last few years, the demand for physical accuracy of the rendering process has grown substantially. By providing the renderer with the capability to physically simulate light transport, we can recreate natural phenomena such as metamerism, fluorescence, polarization, etc\ldots~Such simulations require the internal color representation to be as close to the visible light's spectral power distribution as possible. However, the advantages of these representations are often not worth implementing due to their complexity.
 
 Therefore, vast majority of the conventional renderers internally represent color as an RGB tristimulus value, mainly due to the simplicity and the robustness of such systems. Additionally, almost all of the already existing assets, such as input textures and materials, are defined in RGB, as their creation and utilization is fairly simple. Spectral assets require a real-life model whose reflectance must be measured with a spectrometer, which is both tedious and, in many cases, even impossible.
 

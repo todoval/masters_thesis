@@ -12,19 +12,19 @@ As we base most of our implementation on the already existing sigmoid-based appr
 
 The sigmoid-based cube structure contains multiple entries in form of evenly spaced lattice points. Following, we name the main parameters of a single cube entry:
 \begin{itemize}
-	\item \emph{target RGB} --- the RGB coordinates that the point has in the cube
+	\item \emph{target RGB} --- the coordinates of the point in the RGB cube
 	\item \emph{coefficients} --- 3 sigmoid coefficients used to reconstruct a spectrum so it matches the target RGB
 	\item \emph{lattice RGB} --- the actual RGB that the reconstructed spectrum evaluates to. Ideally, this should match the target RGB
 \end{itemize}
 Along with its entries, the resulting cube structure also stores a few other properties, both \emph{static}, such as the illuminant according to which the RGB cube is uplifted, and \emph{user-adjustable}, such as the cube dimension or the fitting threshold (i.e. the maximum allowed difference between the target and the lattice RGB).
 
-Our trigonometric moment cube includes most of these parameters, and mainly extends the ones that are not suitable for the moment representation. The main difference between the two cubes lies in the distinction of the lattice points --- while the sigmoid cube regards all of its points as equal, the trigonometric moment cube distinguishes (by means of a \texttt{seeded} boolean parameter per entry) between \emph{seeded points}, i.e. the lattice points that store the user-inputted RGB:spectra mappings; and \emph{regular points}, which do not.
+Our trigonometric moment cube includes most of these parameters, and\newline mainly extends the ones that are not suitable for the moment representation. The main difference between the two cubes lies in the distinction of the lattice points --- while the sigmoid cube regards all of its points as equal, the trigonometric moment cube distinguishes (by means of a \texttt{seeded} boolean parameter per entry) between \emph{seeded points}, i.e. the lattice points that store the user-inputted RGB:spectra mappings; and \emph{regular points}.
 
 Our requirements for the shape of the spectra at seeded points differ from the ones at regular points. While we prefer the regular points to have their spectra as smooth as possible in order to avoid unexpected artifacts under other illuminants, the coefficients of the seeded points must reconstruct spectra almost identical to the input spectra, which might include sharp edges and spikes.
 
 Therefore, it is sufficient for the regular points to be represented with a smaller number of coefficients, while seeded points might require a lot more. Although a smooth spectrum can be represented with a high number of coefficients, such a representation is memory inefficient, its reconstruction is more time consuming, and, most importantly, it does not work well with the optimizer. Based on our experiments in~\cref{ssec:noOfMoments}, we decide to store the spectra of regular points with 3 coefficients and adjust the number of coefficients of the seeded points depending on the nature of its desired spectral shape.
 
-In addition to supporting variable number of coefficients (ranging from 3 to 21), the trigonometric moment cube also supports the possibility of having multiple coefficient representations per lattice point. The sole purpose of this extension is to lower the cube size requirements upon constraining, which we discuss later in~\cref{ssec:cubeSeeding}.
+Besides supporting variable number of coefficients (ranging from 3 to 21), the trigonometric moment cube also supports the possibility of having multiple coefficient representations per lattice point. The sole purpose of this extension is to lower the cube size requirements upon constraining, which we discuss later in~\cref{ssec:cubeSeeding}.
 
 In addition to the cube structure, the construction of the trigonometric moment cube is also similar to the one of the sigmoid cube, which follows~\cref{alg:upliftingAlgSigmoid}. Its main distinctions are in the constraining process (which the sigmoid cube lacks) and in the first round of optimizing, or, as we refer to from now on, \emph{fitting}.
 
@@ -48,9 +48,9 @@ This part of the run is responsible for the following:
 	\item loading of the required constraint sets
 \end{itemize}
 
-The initialization of the cube is pretty straightforward, as all of its properties are either user-defined or set to default (note: the default illuminant is always D65). The number of cube entries is directly proportional to the cube's \texttt{dimension} parameter, which specifies the number of entries per one axis. This renders the total number of entries to $dimension^3$. As the lattice points are positioned evenly, their target RGB values are equivalent to their coordinates in the RGB cube.
+The initialization of the cube is pretty straightforward, as all of its properties are either user-defined or set to default (note that the default illuminant is always D65). The number of cube entries is directly proportional to the cube's \texttt{dimension} parameter, which specifies the number of entries per one axis. This renders the total number of entries to $dimension^3$. As the lattice points are positioned evenly, their target RGB values are equivalent to their coordinates in the RGB cube.
 
-The constraint sets are inputted in a form of a simple .txt file, which contains merely a list of entries in a textual form as shown in~\cref{fig:macbethSampleText}. This step is responsible for the parsing of the file, and for storage of individual constraints. In order to avoid high memory requirements arising with large input datasets, we do not store the spectral data directly, but take advantage of the trigonometric moments.
+The constraint sets are inputted in a form of a simple .txt file, which contains a list of entries in a textual form as shown in~\cref{fig:macbethSampleText}. In order to avoid high memory requirements arising with large input datasets, we do not store the spectral data directly, but take advantage of the trigonometric moments.
 
 \begin{figure}
 	\lstset{
@@ -90,15 +90,15 @@ We store the spectral curves of the individual constraints with Fourier coeffici
 
 The number of coefficients per constraint variable, ranging from 4 to 21. We explain our method for determining the sufficiency of coefficient representation, and therefore the coefficient count for each constraint, in~\cref{ssec:noOfMoments}.
 
-Note that we require the constraints to have identical sampling information. This representation is used internally throughout both the fitting and the uplifting process for e.g. spectral reconstruction for the purposes of color conversions, or for coefficient recalculation mentioned later in~\cref{ssec:cubeFitting}.
+Note that we require the constraints to have identical sampling information. This representation is used internally throughout both the fitting and the uplifting process for e.g. spectral reconstruction for the purposes of color conversions.
 
 \subsection{Cube seeding} \label{ssec:cubeSeeding}
 
-In order to uplift the whole cube as described in~\cref{alg:upliftingAlgSigmoid}, we must first fit one or more \emph{starting points} whose coefficients can then be used as prior for the fitting of other lattice points. For this purpose, we utilize the user-specified constraint set. The general idea behind this process is to copy the coefficients of constraints to specific lattice points, and then use these coefficients as prior for fitting said lattice points. We refer to this process as \emph{seeding} of the cube, and term the constraints assigned to these lattice points their \emph{seeds}.
+In order to uplift the whole cube as described in~\cref{alg:upliftingAlgSigmoid}, we must first fit one or more \emph{starting points} whose coefficients can then be used as an initial guess (called \emph{prior}) for the fitting of other lattice points. For this purpose, we utilize the user-specified constraint set. The general idea behind this process is to copy the coefficients of constraints to specific lattice points, and then use these coefficients as prior for fitting said lattice points. We refer to this process as \emph{seeding} of the cube, and term the constraints assigned to these lattice points their \emph{seeds}.
 
 The ideal scenario would be if the RGB values of the constraints were to perfectly match the coordinates of the lattice points. However, as the constraints can evaluate to virtually any triplet within the $[0,1]$ range, it is most likely that they would correspond to points inside the cube's voxels.
 
-A realistic approach would be to create a complete injective mapping between the constraints and their closest lattice points. However, such a mapping would provide satisfactory results only if we were to use the nearest-neighbor method for uplifting non-mapped RGB triplets. As we disregard the nearest-neighbor approach due to its inaccurate results (see~\cref{fig:sigmoidTexture}), we must use either the interpolation of coefficients or spectra, which both employ data at all 8 voxel corners during the uplift. Seeding only one of the 8 points might therefore cause the spectral curves of the other 7 to be considerable distinct from the original constraint. This is mainly due to our choice of coefficient count for non-mapped entries, which is a lot lower than for the seeded entries (see thorough explanation in~\cref{ssec:noOfMoments}), i.e. the curves of the non-seeded entries cannot be as precise. 
+An approach that first comes to mind would be to create a complete injective mapping (one constraint seeds only one voxel corner) between the constraints and their closest lattice points. However, as we employ all 8 voxel corners during the uplifting of non-mapped RGB values (because we disregard the nearest-neighbor approach due to its inaccurate results, see~\cref{fig:sigmoidTexture}), this method is insufficient --- seeding only one of the 8 points might cause the spectral curves of the other 7 to be considerable distinct from the original constraint. This is mainly due to our choice of coefficient count for non-mapped entries, which is a lot lower than for the seeded entries (see thorough explanation in~\cref{ssec:noOfMoments}), i.e. the curves of the non-seeded entries cannot be as precise. 
 
 We can observe this behavior in~\cref{fig:seedingMethod1corner}, where we provide the curves reconstructed at the 8 corners of a voxel and compare their trilinear interpolation to the original constraint. The original constraint significantly differs from the uplift, which may cause color artifacts under different illuminating conditions. However, as seen in~\cref{fig:seedingMethod8corners}, propagating the information about the original reflectance of the constraint to all voxel corners improves the result remarkably. We therefore opt for seeding all 8 voxel corners per constraint.
 
@@ -198,7 +198,9 @@ We solve such problematic cases by applying a simple heuristic, which consists o
 
 Therefore, we implement another heuristic improvement --- if the coefficient count is higher than 14, we let the optimizer optimize only the first 4 coefficients while leaving the others constant. We use the threshold of $c > 14$ as that is roughly the boundary where the fitted curves begin to show undesired artifacts, and we optimize the first 4 coefficients because their number is both low enough for the optimizer to handle without errors, and high enough so we give the fitting process enough degrees of freedom.
 
-We summarize the fitting process of the starting points, including the utilization of threshold for our fourth cost function, in~\cref{alg:fittingAtlasLatticePoints}. If the optimizer is unable to fit a seeded points, we throw a warning and convert it into a regular point. However, as of yet, we have not encountered a failure.
+We do not provide the results of the experiments that lead to our decision of the heuristic due to its trivial nature.
+
+We summarize the fitting process of the starting points, including the utilization of threshold for our fourth cost function, in~\cref{alg:fittingAtlasLatticePoints}. If the optimizer is unable to fit a seeded point, we throw a warning and convert it into a regular point.
 
 \begin{algorithm}[t!]
 	\caption{Fitting of one coefficient representation of a $point$ from seeded points}
@@ -224,7 +226,7 @@ We summarize the fitting process of the starting points, including the utilizati
 
 \subsection{Cube fitting} \label{ssec:cubeFitting}
 
-As the seeded points are represented with a higher number of coefficients and may even contain multiple coefficient representations, they cannot be directly used as prior for the regular points. First, they must be ``converted'' into a lower-dimensional representation.
+As the seeded points are represented with a higher number of coefficients and may even contain multiple coefficient representations, they cannot be directly used as prior guesses for the regular points. First, they must be ``converted'' into a lower-dimensional representation.
 
 We refer to the conversion process as \emph{coefficient recalculation}. It consists of reconstructing the reflectance spectrum of the seeded point and subsequently saving it with 3 coefficients. Although this process causes significant loss of spectral information, it preserves the rough outline of the curve. This works to our benefit --- it reduces the likelihood of significant color artifacts between the seeded points and regular points while keeping the spectra smooth.
 
@@ -236,27 +238,27 @@ We refer to the conversion process as \emph{coefficient recalculation}. It consi
 	\label{fig:recalculation_process}
 \end{figure}
 
-A problem arises if the seeded point that is being recalculated for the purposes of fitting a regular point contains multiple moment representations from different metameric families. We illustrate this situation in~\cref{fig:recalculation_process}. The recalculated seeded point (denoted $x$) contains the moment representation of both the constraint $A$ and $B$. As these have vastly distinct shapes, it is natural that they evaluate to completely different colors under error-prone illuminants (specifically, the colors shown in the image are under FL11). Choosing to recalculate only the representation of $A$ in order to obtain the prior coefficients of the regular point (denoted $y$) would result in significant color artifacts between $y$ and the voxel seeded with $B$. Symmetrically, the same applies to choosing to recalculate only the coefficient representation of $B$. We can also observe this in~\cref{fig:recalculation_colorGradients}, where we present the comparison of the color gradients created by respectively using the individual recalculation techniques. Note that the spectra (and, subsequently, colors) that the $A$ and $B$ entries evaluate to in both~\cref{fig:recalculation_process} and~\cref{fig:recalculation_colorGradients} are not the original spectra of the constraints, but the spectra that the coefficient representations saved at the seeded point $x$ evaluate to. Also note that the spectra and colors corresponding to the point $y$ are the recalculation results, not the final fitting results.
+A problem arises if the seeded point that is being recalculated for the purposes of fitting a regular point contains multiple moment representations of distinctly shaped spectral curves (note that, for the purposes of this thesis, we call a set of similarly shaped spectral curves a \emph{metameric family}). We illustrate this situation in~\cref{fig:recalculation_process}. The recalculated seeded point (denoted $x$) contains the moment representation of both the constraint $A$ and $B$. As these have vastly distinct shapes, it is natural that they evaluate to completely different colors under error-prone illuminants (specifically, the colors shown in the image are under FL11). Choosing to recalculate only the representation of $A$ in order to obtain the prior coefficients of the regular point (denoted $y$) would result in color artifacts between $y$ and the voxel seeded with $B$. Symmetrically, the same applies to choosing to recalculate only the coefficient representation of $B$. We can also observe this in~\cref{fig:recalculation_colorGradients}, where we present the comparison of the color gradients created by respectively using the individual recalculation techniques. Note that the spectra (and, subsequently, colors) that the $A$ and $B$ entries evaluate to in both~\cref{fig:recalculation_process} and~\cref{fig:recalculation_colorGradients} are not the original spectra of the constraints, but the spectra that the coefficient representations saved at the seeded point $x$ evaluate to. Also note that the spectra and colors corresponding to the point $y$ are the recalculation results, not the final fitting results.
 
 \begin{figure}[t!]
 	\centering
 	\captionsetup[subfigure]{font=footnotesize,labelfont=footnotesize}
 	\captionsetup[subfigure]{justification=centering}
-	\begin{subfigure}[t]{0.30\textwidth}
+	\begin{subfigure}{0.30\textwidth}
 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitGreen.png}
 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
 		\caption{Recalculation of the coefficient representation of $A$ only}
 		\label{fig:recalculation_colorGradients_green}
 	\end{subfigure}
-	\begin{subfigure}[t]{0.30\textwidth}
+	\begin{subfigure}{0.30\textwidth}
 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_interpolated.png}
 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
 		\caption{Recalculation of the interpolation between\\ $A$ and $B$}
 		\label{fig:recalculation_colorGradients_interpolated}
 	\end{subfigure}
-	\begin{subfigure}[t]{0.30\textwidth}
+	\begin{subfigure}{0.30\textwidth}
 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_green.png}
 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_fitRed.png}
 		\includegraphics[width=1\linewidth,height=4em]{img/recalculation_color_red.png}
@@ -310,9 +312,9 @@ The same proof can be equivalently applied to the G and B components of the resu
 
 We use this observation in order to achieve smoother color transitions between distinct metameric families by interpolating between metameric spectra stored (in the form of moment representations) at lattice points that contain multiple coefficient representations.
 
-Additionally, we use to obtain the lattice RGB of such points --- i.e. we store the RGB of the interpolated spectrum. Although this information is meaningless for the purposes of further fitting, it gives us an approximation of how well the individual points are fitted.
+Additionally, we use it to obtain the lattice RGB of such points --- i.e. we store the RGB of the interpolated spectrum. Although this information is meaningless for the purposes of further fitting, it gives us an approximation of how well the individual points are fitted.
 
-Other than the coefficient recalculation, our fitting process is carried out in a manner similar to that of the sigmoid fitting (see~\cref{alg:upliftingAlgSigmoid}), where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind the fitting algorithm used in our implementation in~\cref{alg:upliftingAlgMoments}. Note that each round of the fitting is multithreaded, which substantially increases time performance.
+Other than the coefficient recalculation, our fitting process is carried out in a manner similar to that of the sigmoid fitting (see~\cref{alg:upliftingAlgSigmoid}), where the lattice points are fitted in multiple \emph{fitting rounds}, each round attempting to fit the neighbors of the already fitted points. We provide a more detailed description of the principle behind the fitting algorithm used in our implementation in~\cref{alg:upliftingAlgMoments}.
 
 \begin{algorithm}[t!]
 	\caption{Fitting of the cube from starting points}
@@ -353,7 +355,7 @@ Other than the coefficient recalculation, our fitting process is carried out in 
 
 \subsection{Cube improvement} \label{ssec:cubeImprovement}
 
-In extreme cases, such as when using a low fitting threshold or a sparsely-sampled constraint set, the fitting of some points may be unsuccessful. We assign most of these failures to the shortcomings of ART, since its functions are employed in the Borgtool for color conversion purposes.
+In extreme cases, such as when using a low fitting threshold or a sparsely-sampled constraint set, the fitting of some points may be unsuccessful. We assign most of these failures to the shortcomings of the ART color conversion library, since its functions are employed in the Borgtool.
 
 Specifically, the conversion of an equal energy reflectance spectrum to RGB under the D65 illuminant does not produce the expected $RGB = (255, 255, 255)$, but rather an RGB of $(254.95, 255.005, 255.0003)$ for a 1nm sample increment, and, even worse $(254.88, 255.07, 254.93)$ for a 10nm increment. To force ART to reproduce an RGB of $(255, 255, 255)$, a spectrum with slightly lower values in the area around 550nm is required. Therefore, although a coefficient set $c = {1, 0, 0}$ represents an equal energy spectrum, it does not suffice for the optimizer. Additionally, 3 trigonometric coefficients are not capable of representing the slightly modified spectrum which ART regards as equal energy spectrum without slight error. This becomes even more visible if the amount of samples used for the internal representation of spectra is low, as it gives less freedom to the optimizer. Furthermore, this problem may also arise for target RGB values extremely close to $(255, 255, 255)$ (and not only the lattice point with RGB=$(255,255,255)$), which is mainly the case in higher-resolution cubes.
 
@@ -393,4 +395,4 @@ Firstly, from the notion of the desired RGB, we obtain the 8 voxel corners along
 
 If $S$ is not empty, it must contain precisely one ID, and that is the ID of the constraint with which the voxel was originally seeded. To therefore reconstruct this constraint, we use only the coefficient representations corresponding to the common ID for spectral reconstruction of each voxel corner. We then carry out a weighted trilinear interpolation of the reconstructed curves, which results in the final, uplifted spectrum.
 
-If, on the other hand, $S$ is empty, we perform the interpolation of the metamers at each of the 8 voxel corners. The resulting metamers are then passed as an input to the voxel's trilinear interpolation. The reason behind this is the same as for the coefficient recalculation (see~\cref{ssec:cubeImprovement}), and that is smooth color transitions between various metameric families under different illuminants.
+If, on the other hand, $S$ is empty, we perform the interpolation of the spectra at each of the 8 voxel corners. The resulting spectra are then passed as an input to the voxel's trilinear interpolation. The reason behind this is the same as for the coefficient recalculation (see~\cref{ssec:cubeImprovement}), and that is smooth color transitions between various metameric families under different illuminants.

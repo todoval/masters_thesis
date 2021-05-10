@@ -4,14 +4,14 @@ In this chapter, we analyze the accuracy of our method for constrained spectral 
 
 We conclude this chapter by shortly overviewing the performance of our method by providing measurements of both memory utilization and execution time, and proposing improvements for future work.
 
-All the data of color atlases and illuminants used in our experiments is provided by ART~\cite{ART}.
+All assets used in our experiments, such as spectral power distributions of colors atlases and illuminants, are provided by ART~\cite{ART}.
 
 \section{Implementation choices}
 
 The structure of the trigonometric moment cube resulting from the implemented Borgtool's extension greatly depends on the choice of techniques and parameter values used during the implementation. To be specific, the core elements affecting the accuracy include:
 \begin{itemize}
 	\item the signal mapping technique used for spectral representation with trigonometric moments
-	\item the number of trigonometric moments with which to store spectra
+	\item the number of trigonometric moments used to store spectra
 	\item the utilization of the optimizer, specifically the definition of its residual blocks
 \end{itemize}
 
@@ -72,7 +72,7 @@ By observing~\cref{table:comparisonMomentTechnique}, we conclude that it is bene
 
 \Cref{table:comparisonMomentTechnique} also suggests that warping should provide better results. We put this theory to practice and test the performance of the optimizer on the chosen technique. Specifically, our test includes storing atlas entries with a ``sufficient'' number of coefficients (sufficiency of a representation is determined by the round-trip Delta E error under FL11 illuminant as in~\cref{ssec:noOfMoments}) and using these coefficients as prior for the fitting of closest lattice points. The original and fitted curves are then compared.
 
-Unfortunately, the results are unsatisfactory. Occasionally, the optimizer fails in so as the fitted curve does not follow the original at all but rather ends up as a spiky spectrum susceptible to metameric artifacts. We show some of these results in~\cref{fig:warping_atlasLatticePoints}.
+Unfortunately, the results are unsatisfactory. Occasionally, the optimizer fails to recreate the original curve and rather ends up outputting a spiky spectrum susceptible to metameric artifacts. We show some of these results in~\cref{fig:warping_atlasLatticePoints}.
 
 Therefore, we resort to not warping the signal. Although the optimizer must process more coefficients than if the signal was warped (e.g. if seeding with the Munsell Book of Color with the sufficiency conditions as in~\cref{ssec:noOfMoments}, $16$ coefficients are on average required for storing spectra, as opposed to $12$ if the signal is warped), the artifacts arising when warping the signal are completely eliminated (see~\cref{fig:warping_atlasLatticePoints}). Additionally, the average difference between the shape of the original and fitted spectra is substantially lower.
 
@@ -134,7 +134,7 @@ As we eventually decide on using only 3 coefficients for regular points (see~\cr
 
 To justify the failures of warping, we analyze its behavior during round-trips in comparison to that of not warping. In~\cref{fig:resultsWarping}, we present a few such examples on different curves with different number of coefficients. We can clearly observe the behavior for which warping was designated --- while the slight waves in the middle of the curve (at around 550nm) are reconstructed almost perfectly, the edges of the curve (i.e. the part of the curve up to 450nm and from 650nm) are flat and attain constant values.
 
-Therefore, if warping the signal, the optimizer has very little influence on the edges of the curve. For that reason, it opts for optimizing only its middle, which might result in amplifying the already created sinusoidal-like shapes.
+Therefore, if the signal is warped, the optimizer has very little influence on the edges of the curve. For that reason, it opts for optimizing only its middle, which might result in amplifying the already created sinusoidal-like shapes.
 
 By not warping the signal, on the other hand, the optimizer focuses on the spectra as a whole and is therefore less prone to spiky artifacts.
 
@@ -230,7 +230,7 @@ Furthermore, even if we were to perfect our method, there exist a lot more, vast
 
 Finding the sufficient coefficient count for regular points is a lot more straightforward than for the seeded points. We remind that the only requirement is for the spectra to be smooth, so as to avoid interpolation-caused artifacts. This property is especially important if two constraints from different metameric families seed voxels close to each other. Propagating their original shapes during the cube fitting process would, under a different illuminant, create noticeable color artifacts, which is undesired.
 
-\Cref{fig:warping_regularPoints} already suggests that using less coefficients might benefit our smoothness requirement. We put this theory to test by comparing spectra of regular points fitted with a different number of coefficients in cubes of otherwise identical parameters. We present some of the results in~\cref{fig:noOfMoments_regularPoints}.
+\Cref{fig:warping_regularPoints} already suggests that using less coefficients might benefit our\newline smoothness requirement. We put this theory to test by comparing spectra of regular points fitted with a different number of coefficients in cubes of otherwise identical parameters. We present some of the results in~\cref{fig:noOfMoments_regularPoints}.
 
 \begin{figure}[t]
 	\centering
@@ -257,7 +257,7 @@ Additional benefit of using only 3 coefficients per regular point (as opposed to
 
 \subsection{Cost functions} \label{ssec:costFunctions}
 
-In addition to the moment storage technique, another thing greatly affecting the outcome of the fitting are the cost functions of the optimizer.
+In addition to the moment storage technique, another aspect greatly affecting the outcome of the fitting are the cost functions of the optimizer.
 
 For the fitting of the sigmoids, Borgtool uses three cost functions, or \emph{residuals}, each of them specifying the absolute color difference in one axis of the RGB cube. Such an approach outperforms both the Euclidean color distance and even the Delta E difference --- the higher the number of meaningful residuals, the more information can the optimizer deduce about the coefficients' behavior, which, in turn, results in faster and more precise convergence.
 
@@ -322,7 +322,7 @@ Note that, in order to keep track of the optimizer's ability to mimic its input,
 
 We therefore conclude that we must incorporate the requirement of curve shape similarity into our cost functions. Following, we review the approaches we attempted along with their outcomes.
 
-The first idea was to implement an approach similar to that for determining the number of coefficients with which to store constraints (see~\cref{ssec:noOfMoments}), i.e. to utilize the color error under a fluorescent illuminant (specifically, FL11). We defined three additional cost functions, each specifying the difference between the original and the reconstructed curve's RGB under the FL11 illuminant in one of the axes. If their values fell below a specific threshold, we terminated the fitting process as successful, if not, we increased the threshold and tried again.
+The first idea was to implement an approach similar to that for determining the number of coefficients with which to store constraints (see~\cref{ssec:noOfMoments}), i.e. to utilize the color error under a fluorescent illuminant (specifically, FL11). We defined three additional cost functions, each specifying the difference between the original and the reconstructed curve's RGB under the FL11 illuminant in one of the axes. If their values fall below a specific threshold, we terminate the fitting process as successful, if not, we increase the threshold and try again.
 
 Although this approach was successful on average (the average threshold was around $t = 0.025$), occasionally, the threshold often needed to be increased to values so high that it became obsolete (i.e. $t = 1$). Using only one error, either the Euclidean distance or the Delta E error, caused similar issues.
 
@@ -334,7 +334,7 @@ As we suspected that the failures of the optimizer with lower threshold values w
 
 As the importance of curve samples in terms of proper color reconstruction is mainly placed on their middle (at around 550nm), we attempted to add a heuristic-based weighting factor in an effort to focus on minimizing the distance between the two curves in that place. However, we did not succeed in improving our results, and we therefore dropped the experiment and examined the optimizer's behavior without weighting the values.
 
-The proposed method substantially outperformed the previous ones. The threshold error ended up being only about $t = 0.0045$, and, of yet, no entry requiring $d > 0.03$ has been encountered. Therefore, we concluded the experiments by defining 4 residuals, 3 of them specifying the RGB difference, and 1 specifying the average distance per sample.
+The proposed method substantially outperformed the previous ones. The threshold error ended up being only about $t = 0.0045$, and, as of yet, no entry requiring $d > 0.03$ has been encountered. Therefore, we concluded the experiments by defining 4 residuals, 3 of them specifying the RGB difference, and 1 specifying the average distance per sample.
 
 We present some of the results achieved with our cost functions in~\cref{fig:resultsCostFunctions}, where we compare them to fitting with RGB cost functions only. In~\cref{fig:resultsCostFunctions_mcb0725} and~\cref{fig:resultsCostFunctions_darkskin}, we specifically focus on the most problematic spectra with the highest distance $d$ between the seeded point and the constraint.
 
@@ -460,7 +460,7 @@ The average round-trip error was just a Delta E of $0.21$. As the maximum error 
 	\label{fig:seeding_accuracy_dark}
 \end{figure}
 
-An example of this behavior in the dark region of the RGB cube can be observed in~\cref{fig:results_uplift_munsell}. The reason for it is the inadequate fitting of seeded points by the optimizer. This behavior was already present in~\cref{ssec:costFunctions} in~\cref{fig:resultsCostFunctions}, where we concluded that it is due to both the moment representation's inability to flawlessly reconstruct constant curves, and the optimizer's tendency to amplify this deficiency. As the spectral shapes of the dark colors resemble almost constant lines close to zero, it makes sense that the optimizer would primarily fail there.
+An example of this behavior in the dark region of the RGB cube can be observed in~\cref{fig:results_uplift_munsell}. The reason for it is the inadequate fitting of seeded points by the optimizer. This behavior was already present in~\cref{fig:resultsCostFunctions}, where we concluded that it is due to both the moment representation's inability to flawlessly reconstruct constant curves, and the optimizer's tendency to amplify this deficiency. As the spectral shapes of the dark colors resemble almost constant lines close to zero, it makes sense that the optimizer would primarily fail there.
 
 In~\cref{fig:seeding_accuracy_dark} and~\cref{fig:seeding_accuracy_other}, we provide comparisons of curves of the original spectra, the seeded spectra (labeled \emph{round-trip}, i.e. it represents the direct reconstruction from the moments used to store the original spectra) and the uplifted spectra (i.e. the result of querying the final coefficient cube, including interpolation within the voxel the RGB value lies in). Ideally, all three curves should be identical: a difference between ``original'' and ``round-trip'' points to the deficiency of the moment-based spectral reconstruction, while a difference between ``round-trip'' and ``uplift'' indicates a drawback in the optimizer. We can observe that, while for darker colors (see~\cref{fig:seeding_accuracy_dark}), the errors are mainly due to deficiencies of the optimizer, slight curve deviations for brighter colors (see~\cref{fig:seeding_accuracy_other}) are usually due to imperfections of the moment representation.
 
@@ -483,7 +483,7 @@ Unfortunately, we have encountered issues when testing the accuracy of our syste
 
 For this reason, in order to demonstrate the correctness of our model on an example scene in~\cref{fig:results_art_scene}, we do not use the spectrally rendered textures but rather our own, manually-created, which perfectly match the desired RGB values. As the method was not tested in other renderers, we attribute the need for such a process to the inaccuracy of ART. 
 
-Due to the inaccuracies during rendering, we do not provide difference images in the actual scene in~\cref{fig:results_art_scene}. However, our contribution is still visible. In the brighter patches of the middle page (050GY), we can observe how our methods preserves the breaking down of the gradients, which are smooth for the sigmoid uplift. For the rightmost page (100Y), both our and the original spectral render display a green tint for their darker patches, which is eliminated in the sigmoid uplift.
+Due to the inaccuracies during rendering, we do not provide difference images in the actual scene in~\cref{fig:results_art_scene}. However, our contribution is still visible. In the brighter patches of the middle page (050GY), we can observe how our method preserves the breaking down of the gradients, which are smooth for the sigmoid uplift. For the rightmost page (100Y), both our and the original spectral render display a green tint for their darker patches, which is eliminated in the sigmoid uplift.
 
 \begin{figure}[ht]
 	\centering
@@ -642,6 +642,11 @@ In this chapter, we have already mentioned multiple deficiencies of our system. 
 	\item{\emph{Execution time}}
 	
 	In order to improve the execution time of the uplifting process in a renderer, multiple optimizations could be added, such as storing intermediate values (e.g. exponential moments during spectral reconstruction), or perfecting the process of determining whether the voxel has been seeded prior to trilinear interpolation (see~\cref{sec:rendererIntegration}). Some of these optimization could also be included in the cube fitting process.
+	
+	\item{\emph{Supported color gamuts}}
+	
+	Currently, the only supported gamut is the sRGB color gamut. This renders some of the constraints in the standard color atlases, such as the Munsell Book of Color or even the Macbeth Color Chart, unusable. In the future, we propose adding the possibility to choose a color gamut within which we want to uplift.
+	
 	
 	\item{\emph{Sufficient moment count}}
 	

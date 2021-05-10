@@ -25,7 +25,7 @@ We begin this chapter by reviewing the already existing approaches to spectral u
 
 \section{Uplifting methods} \label{sec:upliftingMethods}
 
-Although there have been multiple attempts at spectral uplifting, not many meet all the criteria required for a successful and complete conversion. Some of the methods, for example, output reflectance spectra with values outside the $[0,1]$ range, others work for saturated colors only, others cause noticeable round-trip errors (i.e. there is a visible difference between the original RGB and the RGB of the uplifted spectrum), etc\ldots
+Although there have been multiple attempts at spectral uplifting, not many meet all the criteria required for a successful and complete conversion. Some of these methods pose various issues, such as outputting reflectance spectra with values outside the $[0,1]$ range, working for saturated colors only, causing noticeable round-trip errors (i.e. there is a visible difference between the original RGB and the RGB of the uplifted spectrum), etc\ldots
 
 Following, we overview the most popular approaches to spectral uplifting and call attention to their advantages and disadvantages. We base most of this section on an article by~\citet{upsamplingFluorescence}, which, in addition to providing a survey of existing techniques, proposes a new one that is considered to be the current state of the art.
 
@@ -37,9 +37,9 @@ Following, we overview the most popular approaches to spectral uplifting and cal
 
 \paragraph{Otsu et al.} One of the most recent uplifting techniques has been proposed by~\citet{upsamplingOtsu}. It is based on the observation that a typical measured reflectance spectrum can be represented with only a few principle components. The method uses clustered principal component analysis (PCA) and, unlike many other approaches, does not presume that spectra must necessarily be smooth. Such a simplification both eliminates the requirement of having a smoothness heuristic and enables the reconstructed spectra to match the actual measured spectra pretty well. This approach, however, has its downsides. Firstly, the method does not necessarily satisfy the $[0,1]$ range criterion. Therefore, the values must be clamped, which results in color reproduction errors. Moreover, since there is no interpolation across clusters, similar RGB values may produce very different spectra, which might lead to discontinuities in rendering. However, in multiple cases, this method has been shown to outperform all of the already mentioned ones~\cite{upsamplingJakobHanika}.
 
-\paragraph{Jakob and Hanika.} Another approach, which discusses a parametric function space for efficient representation of spectral reflectance curves and its subsequent utilization in spectral uplifting, has been introduced by~\citet{upsamplingJakobHanika}. Based on their observation, a research software, \emph{Borgtool}, has been created. Originally developed by collaboration of Charles University and Weta Digital, Borgtool possesses the capability of creating uplifting models in accordance to the work of~\citet{upsamplingJakobHanika}. As the goal of this thesis is to extend Borgtool, we describe the theory behind its uplifting model in more detail.
+\paragraph{Jakob and Hanika.}~\citet{upsamplingJakobHanika} propose another approach, which discusses a parametric function space for efficient representation of spectral reflectance curves and its subsequent utilization in spectral uplifting. Based on their observation, a research software, \emph{Borgtool}, has been created. Originally developed by collaboration of Charles University and Weta Digital, Borgtool possesses the capability of creating uplifting models in accordance to the work of~\citet{upsamplingJakobHanika}. As the goal of this thesis is to extend Borgtool, we describe the theory behind its uplifting model in more detail.
 
-The motivation was to create a spectral representation that would be both energy-conserving and would have a successful round-trip, i.e. the Delta E difference between the original RGB and the RGB obtained by conversion to spectra and back would be as small as possible. Based on the equation specifying the Delta E error, a simple analytical model has been created. Spectra in accordance with this model are represented as follows:
+The motivation was to create a spectral representation that would be both energy-conserving and would have a successful round-trip, e.g. the Delta E difference between the original RGB and the RGB obtained by conversion to spectra and back would be as small as possible. Based on the equation specifying the Delta E error, a simple analytical model has been created. Spectra in accordance with this model are represented as follows:
 \begin{equation} \label{sigmoidRepresentation}
 f(\lambda)=S(c_{0}\lambda^2+c_{1}\lambda+c_{2}),
 \end{equation}
@@ -53,9 +53,9 @@ The optimization is performed by the CERES solver~\cite{ceres-solver}, which req
 
 However, utilizing the CERES Solver during the rendering process would result in substantial performance overhead. Therefore, RGB:spectra mappings are pre-computed beforehand, and stored in a texture which then serves as a lookup structure during rendering.
 
-Obviously, it is impossible to store mappings for every RGB triplet --- the RGB space needs to be discretized as efficiently as possible. Borgtool approaches this problem by storing the mappings in the vertices of a 3D regular grid inside an RGB cube. Note that this is a simplification of the original proposition by~\citet{upsamplingJakobHanika}, which divides the sRGB space into three quadrilateral regions in which the coefficients are very smooth. For satisfactory results, only three 3D cubes of size $64^3$ would be required.
+Obviously, it is impossible to store mappings for every RGB triplet --- the RGB space needs to be discretized as efficiently as possible. Borgtool approaches this problem by storing the mappings in the vertices of a regular 3D grid inside an RGB cube. Note that this is a simplification of the original proposition by~\citet{upsamplingJakobHanika}, which divides the sRGB space into three quadrilateral regions in which the coefficients are very smooth. For satisfactory results, only three 3D cubes of size $64^3$ would be required.
 
-We describe the pseudo-algorithm used in Borgtool in order to create a sigmoid-based uplifting model in~\cref{alg:upliftingAlgSigmoid}.
+We describe the pseudo-algorithm used in Borgtool in order to create a\newline sigmoid-based uplifting model in~\cref{alg:upliftingAlgSigmoid}.
 
 \begin{algorithm}[t!]
 	\caption{Construction of a sigmoid-based uplift cube}
@@ -128,7 +128,7 @@ The nearest neighbor approach, on the other hand, is susceptible to visible arti
 	\label{fig:sigmoidTexture}
 \end{figure}
 
-An obvious case in which it is possible to avoid any kind of interpolation or approximation is when the RGB values that will be required during the uplift are known beforehand. They can then be added as lattice points to the RGB cube. This is especially useful when attempting to uplift specific textures or materials, which is, in fact, what this method was originally intended for.
+An obvious case in which it is possible to avoid any kind of interpolation or optimization is when the RGB values that will be required during the uplift are known beforehand. They can then be added as lattice points to the RGB cube. This is especially useful when attempting to uplift specific textures or materials, which is, in fact, what this method was originally intended for.
 
 This uplifting model is, in many cases, superior to the ones already mentioned above. First of all, the round trip error yields 0 in the sRGB gamut. In other gamuts within the spectral locus, it outperforms other models as well. Moreover, the execution speed is by far the best, even with the uplifting process running beforehand. 
 
@@ -155,7 +155,7 @@ In other words, the user would define specific RGB:spectra mappings which would 
 
 We call this process \emph{constrained spectral uplifting}. The fact that it does not provide as much freedom as other spectral uplifting approaches works for our benefit, as the results are not a subject to high metamerism, which is, after all, the goal of this thesis.
 
-In this thesis, we base the algorithm used to implement constrained spectral uplifting on~\cref{alg:upliftingAlgSigmoid}. We also use an RGB cube as a structure for saving the mappings, and we also create an uplifting model prior to rendering. We leave the specific details of implementation to~\cref{chap:implementation}. In this section, we discuss the theoretical background of the constraining itself. Specifically, we focus on the means of storing the individual spectra in our structure and the problems that arise along with it.
+In this thesis, we base the algorithm used to implement constrained spectral uplifting on~\cref{alg:upliftingAlgSigmoid}. We use a similar RGB cube as a structure for saving the mappings, and we also create an uplifting model prior to rendering. We leave the specific details of implementation to~\cref{chap:implementation}. In this section, we discuss the theoretical background of the constraining itself. Specifically, we focus on the means of storing the individual spectra in our structure and the problems that arise along with it.
 
 \subsection{Spectral sampling}
 
@@ -163,7 +163,7 @@ The constraining process starts when the user inserts a set of spectra. Finding 
 
 A trivial way to store spectral information is via regular sampling, i.e. to store every ith value of the spectrum, starting from roughly 380nm and ending at 780nm (as that is the range for visible light). However, for an acceptable color reproduction, around 30 samples are needed for each spectrum~\cite{trigonometricMomentsPresentation}. Storing so many values is extremely memory inefficient, especially when taking into account all the other mappings that must be created later in the system.
 
-Another issue with such storage arises during the approximation stage of the uplifting process. Trying to approximate so many values is infeasible for any optimizer. We must therefore create a more compact representation, which recreates the spectra as efficiently as possible.
+Another issue with such storage arises during the optimization stage of the uplifting process. Trying to modify so many values is infeasible for any optimizer. We must therefore create a more compact representation, which recreates the spectra as accurately as possible.
 
 As already mentioned, utilizing the representations of one of the existing approaches to spectral uplifting (reviewed in~\cref{sec:upliftingMethods}) is not an option, as all of them are restricted to a specific spectral space and therefore unable to recreate all the possible reflectance curves. We provide an example of this in~\cref{fig:specRecUpliftingMethods}, where the resulting spectra of the uplifting process of multiple methods are compared to the actual measured spectrum of the real-life material.
 
@@ -186,7 +186,7 @@ We show an example of a result obtained by this method in~\cref{fig:specRecTrunc
 	\end{subfigure} \hspace{0.1em}
 	\begin{subfigure}[t]{0.45\textwidth}
 	\includegraphics[width=\linewidth]{img/spectra_rec_truncated_fourier.png}
-	\caption{Reconstruction with truncated Fourier series~\cite{trigonometricMomentsPresentation}}
+	\caption{Reconstruction with truncated\newline Fourier series~\cite{trigonometricMomentsPresentation}}
 	\label{fig:specRecTruncatedFourier}
 	\end{subfigure}
 	\caption{Comparison of the accuracy of multiple techniques when attempting to reconstruct a real-life measured spectrum.}
@@ -242,7 +242,7 @@ The summary of the reconstruction process is as follows:
 	\item compute bounded MESE by applying duality to the unbounded MESE
 \end{enumerate}
 
-We present examples of results obtained by the storage and subsequent reconstruction of reflectance spectra with the trigonometric moment method in~\cref{fig:momentsReconstructionComparison}, where we also compare the performance of different number of moments and different signal mapping techniques. For smooth spectra, even a small number of moments($m=3$) provide a quite accurate reconstruction (see~\cref{fig:momentsReconstructionPeters}). However, more complex spectra with sharper edges and spikes tend to lose detail and their reconstruction is a lot smoother. As seen in~\cref{fig:momentsReconstructionOur}, especially for the ``black'' and ``neutral35'' patches, even 7 moments are not capable of describing the original curve accurately.
+We present examples of results obtained by the storage and subsequent reconstruction of reflectance spectra with the trigonometric moment method in~\cref{fig:momentsReconstructionComparison}, where we also compare the performance of different number of moments and different signal mapping techniques. For smooth spectra, even a small number of moments ($m=3$) provide a quite accurate reconstruction (see~\cref{fig:momentsReconstructionPeters}). However, more complex spectra with sharper edges and spikes tend to lose detail and their reconstruction is a lot smoother. As seen in~\cref{fig:momentsReconstructionOur}, especially for the ``black'' and ``neutral35'' patches, even 7 moments are not capable of describing the original curve accurately.
 
 \begin{figure}[t]
 	\centering
@@ -252,7 +252,7 @@ We present examples of results obtained by the storage and subsequent reconstruc
 	\vspace{1em}
 	\begin{subfigure}[t]{0.45\textwidth}
 		\includegraphics[width=\linewidth,height=0.2\textheight]{img/moments_reconstruction_Peters.png}
-		\caption{Examples of reconstruction of smooth spectra as provided by~\citet{trigonometricMomentsPaper}}
+		\caption{Examples of reconstruction of\newline smooth spectra as provided by~\citet{trigonometricMomentsPaper}}
 		\label{fig:momentsReconstructionPeters}
 	\end{subfigure} \hspace{0.1em}
 	\begin{subfigure}[t]{0.45\textwidth}
@@ -267,6 +267,6 @@ We present examples of results obtained by the storage and subsequent reconstruc
 
 Emission spectra perform even worse. To give an example, even a mirrored approach with $m=31$ is unable to reconstruct the most spiky details~\cite{trigonometricMomentsPaper}. However, as the focus of this thesis is purely on reflectance spectra, we do not encounter a spectrum that would require such high number of moments.
 
-The optimal number of moments for storing a spectral reflectance curve depends on many factors, such as the shape of the curve, memory limitations and the accuracy for which we aim, either in terms of curve similarity or color error under various illuminants. We discuss these factors more thoroughly as we progress with this thesis, and explain our method for determining the ``sufficient moment count'' in~\cref{ssec:noOfMoments}.
+The optimal number of moments for storing a spectral reflectance curve depends on many factors, such as the shape of the curve, memory limitations and the accuracy for which we aim, either in terms of curve similarity or color error under various illuminants. We discuss these factors more thoroughly as we progress with this thesis, and explain our method for determining the sufficient moment count in~\cref{ssec:noOfMoments}.
 
 Due to memory efficiency, smoother gradients, higher precision and multiple other reasons, thoroughly  explained as we progress with this thesis, we decide to use variable number of moments per an input reflectance spectrum in our implementation. Therefore, although~\citet{trigonometricMomentsPaper} state that the interpolation of coefficients provides satisfactory results, our uplifting process cannot rely on this method for uplifting non-mapped RGB values. 

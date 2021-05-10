@@ -58,7 +58,7 @@ Object color is defined by the wavelengths it \emph{reflects}. For example, if i
 
 The question of how to discretely represent color has been posed ever since the introduction of the first graphical user interface. For use in computer science, representations are required to be compact, precise, and the operations on colors are required to be simple and easily executed.
 
-We have already briefly mentioned the tristimulus representation in the previous section. In this section, we overview its basic properties and describe some of the most popular tristimulus systems. We also talk about an alternative representation, based primarily on the physical properties of color --- the spectral representation.
+In this section, we describe the spectral representation, which is based primarily on the physical properties of color. Then, we overview the basic properties of the most popular tristimulus systems.
 
 \subsection{Spectral representation}
 
@@ -94,21 +94,21 @@ As the reflectance spectrum serves as a throughput for the emission spectrum, th
 
 \subsection{Tristimulus representation} \label{ssec:tristimulusRepres}
 
-The obvious drawback of the spectral representation is the difficulty of its discretization, since there is an infinite number of possible spectral curves, but only a finite number of digital colors that can be displayed by a monitor. For the purposes of color visualization, a distinct, by nature discrete, color
+The obvious drawback of the spectral representation is the difficulty of its discretization, since there is an infinite number of possible spectral curves, but only a finite number of digital colors that can be displayed by a monitor. For the purposes of color visualization, a distinct, discrete color
 representation is required. 
 
 Tristimulus representation approaches this issue by saving the color as a set of three values. Although the original idea was to simulate the trichromatic perception of human eye (i.e. save values that specify how much have the red, green and blue cones been stimulated), over time, multiple other tristimulus color spaces have been created. They differ mostly in the range of colors they are capable of representing and in their practical use. Following, we provide an overview of some of the most popular ones.
 
 \subsubsection{RGB color space}
-The RGB color space is an additive space employing three primaries --- red, green and blue. In other words, if three lights with red, green and blue chromacities are used to illuminate a single point, any color within the RGB color space can be created solely by changing the lights' intensities. 
+The RGB color space is an additive space employing three primaries --- red, green and blue. In other words, if three lasers with red, green and blue chromacities are used to illuminate a single point, any color within the RGB color space can be created solely by changing the lights' intensities. 
 
 An RGB value can therefore be thought of as a point in a 3-dimensional Euclidean space with each of the coordinate axes representing one of the primaries. As the lights' intensities must be bounded, this space is narrowed down to a cube starting at the base of the coordinate system. Usually, the range for each value is defined within 0 and 255, but a normalized $[0,1]$ range is also used.
 
 Various implementations of the RGB color space exist. They differ in the specifications of the RGB primaries, and therefore in their \emph{color gamut}, which is the subset of colors they are capable of representing. Some examples (named in ascending order with respect to the size of their color gamut) include ISO RGB, sRGB, Adobe RGB, Adobe Wide Gamut RGB and ProPhoto RGB. An illustrative comparison of the sRGB and Adobe RGB gamut in the chromaticity diagram (described thoroughly in~\cref{sssect:xyYcolorSpace}) can be seen in~\cref{fig:chromaticityDiagram}.
 
-RGB color spaces are commonly used in everyday world, e.g. in LCD and LED displays, digital cameras, scanners and even in computer graphics rendering. Their main downside has, however, been discovered when designing color matching functions~\cite{colorMatchingDerivation}.
+RGB color spaces are commonly used in everyday world, e.g. in LED displays, digital cameras, scanners and even in computer graphics rendering. Their main downside has, however, been discovered when designing color matching functions~\cite{colorMatchingDerivation}.
 
-A \emph{color matching function} is a function designed to simulate the response of a certain type of cone in the human eye. In 1931, CIE designed a set of three color matching functions that could be used for spectral to RGB conversion~\cite{colorMatchingDerivation}. Denoted $\overline{r}(\lambda)$, $\overline{g}(\lambda)$ and $\overline{b}(\lambda)$, they approximate the response of the L, M and S cones respectively. However, as seen in figure~\cref{fig:colorMatchingRGB}, the functions may also acquire negative values. At the time, this posed a problem due to calculation errors. Therefore, to eliminate these negative portions of functions, CIE designed a new, imaginary color space --- the XYZ color space.
+A \emph{color matching function} is a function designed to simulate the response of a certain type of cone in the human eye. In 1931, CIE designed a set of three color matching functions that could be used for spectral to RGB conversion~\cite{colorMatchingDerivation}. Denoted $\overline{r}(\lambda)$, $\overline{g}(\lambda)$ and $\overline{b}(\lambda)$, they approximate the response of the L, M and S cones respectively. However, as seen in figure~\cref{fig:colorMatchingRGB}, the functions may also acquire negative values. At the time, this posed a problem due to calculation errors. Therefore, to eliminate these negative portions of functions, CIE designed a new color space --- the XYZ color space.
 
 \begin{figure}[t]
 	\centering
@@ -129,7 +129,7 @@ A \emph{color matching function} is a function designed to simulate the response
 
 \subsubsection{XYZ color space}
 
-The XYZ color space is a hypothetical color space capable of encompassing all colors perceptible by the human eye. Its color matching functions, $\overline{x}(\lambda)$, $\overline{y}(\lambda)$ and $\overline{z}(\lambda)$, were specifically designed for the purposes of SPD to tristimulus conversion, which is computed using the following equations:
+The XYZ color space is a reference color space capable of encompassing all colors perceptible by the human eye. Its color matching functions, $\overline{x}(\lambda)$, $\overline{y}(\lambda)$ and $\overline{z}(\lambda)$, were specifically designed for the purposes of SPD to tristimulus conversion, which is computed using the following equations:
 \begin{equation} \label{spdToXYZ}
 	\begin{aligned}
 	X=\int P(\lambda)\overline{x}(\lambda)d\lambda,\\
@@ -143,7 +143,7 @@ Although the X, Y and Z primaries were designed so that the Y primary closely ma
 
 \subsubsection{xyY color space} \label{sssect:xyYcolorSpace}
 
-In addition the impossible visualization process, another downside of the XYZ color space is that its values are practically unbounded and do not have any real meaning (such as the RGB triplets have). Therefore, a more intuitive color space has been created, which considers the relative proportions of the X, Y and Z values rather than their unbounded versions --- the xyY color space~\cite{xyYOverview}. It is based on the assumption that color can be regarded as a quantity with two properties: \emph{luminance} and \emph{chromaticity}.
+In addition to the impossible visualization process, another downside of the XYZ color space is that its values are practically unbounded and do not have any real meaning (such as the RGB triplets have). Therefore, a more intuitive color space has been created, which considers the relative proportions of the X, Y and Z values rather than their unbounded versions --- the xyY color space~\cite{xyYOverview}. It is based on the assumption that color can be regarded as a quantity with two properties: \emph{luminance} and \emph{chromaticity}.
 
 The conversion from the XYZ to the xyY color space is performed as follows --- first, the $X$, $Y$ and $Z$ values are converted to their bounded versions (also called \emph{chromaticity coordinates}) as defined in~\cref{eq:XYZtoxyY}~\cite{xyYEquations}.
 \begin{equation} \label{eq:XYZtoxyY}
@@ -166,7 +166,7 @@ Plotting the values of the $x$ and $y$ chromaticity coordinates creates a \emph{
 
 \subsubsection{L*a*b*}
 
-Although some of the color spaces mentioned so far are already quite intuitive in terms of human color perception (e.g. xyY), neither of them regards for the human perception of color differences. The human eye is, for example, more prone to spotting differences when comparing lighter pastel colors and neglecting them upon interaction with darker color (e.g. dark blue). If we wish to accurately describe color differences in a color space, we must regard for this factor and aim for \emph{perceptual uniformity}, i.e. for the difference between two colors (as perceived by the human eye) to be proportional to their Euclidean distance within the color space.
+Although some of the color spaces mentioned so far are already quite intuitive in terms of human color perception (e.g. xyY), neither of them regards for the human perception of color differences. The human eye is, for example, more prone to spotting differences when comparing lighter pastel colors and neglecting them upon interaction with darker color (e.g. dark blue). If we wish to accurately describe color differences in a color space, we must regard for this factor and aim for \emph{perceptual uniformity}, i.e. for the difference between two colors as perceived by the human eye to be proportional to their Euclidean distance within the color space.
 
 The Hunter's Lab color space~\cite{hunterLabCIELabComparison} addresses this issue and is designed so that the distance between its two triplets characterizes roughly how different they are in chromaticity and luminance. It is based on the Opponent color theory~\cite{opponentColorTheory}, which suggests that the cones in the human eye are linked together in opposing pairs and that the visual system records the \emph{difference} between the stimulation of the pairs rather than the cones' individual responses.
 
@@ -194,7 +194,7 @@ Delta94 is computed by first modifying the original L*a*b* values of both colors
 	
 Delta2000 attempts to remove these inaccuracies. Including the corrections added to Delta94, Delta2000 overall adds five correctional factors to the original $\Delta E_{ab}^*$ --- compensation factors for lightness, hue and chroma, compensation for neutral colors and, lastly, a hue rotation term for the problematic blue-violet region.
 
-From the listed Delta E equations, the Delta2000 error measurements are the most accurate in terms of human color difference perception~\cite{deltaEOverview}. However, in addition to being computationally intensive, the Delta2000 equation is, by its nature, discontinous~\cite{delta2000Discontinuities}. Therefore, it is not a preferred measure to use in gradient-based optimizers, which is an observation we use in the practical part of this thesis.
+From the listed Delta E equations, the Delta2000 error measurements are the most accurate in terms of human color difference perception~\cite{deltaEOverview}. However, in addition to being computationally intensive, the Delta2000 equation is discontinous~\cite{delta2000Discontinuities}. Therefore, it is not a preferred measure to use in gradient-based optimizers, which is an observation we use in the practical part of this thesis.
 
 \subsubsection{Other color spaces}
 
@@ -210,6 +210,8 @@ In addition to the already mentioned tristimulus color spaces, there exist many 
 Other color spaces include the Munsell color system, RAL, Natural Color System, Pantone Matching System, CIELCH\textsubscript{ab}, CIELCH\textsubscript{uv}, etc$\ldots$
 
 \subsection{Color representation in rendering}
+
+\emph{Rendering} is an image synthesis process which internally utilizes a light transport simulation in order to mimic natural behavior of light and material colors based on a given scene description. The output of such process is an image called a \emph{render}.
 
 Accurate color representation is the core of rendering softwares. Although most of today's renderers support multiple color spaces, we can still divide them into two main categories according to the space used during evaluation of light transfer equations --- \emph{tristimulus} and \emph{spectral} renderers.
 
@@ -228,15 +230,15 @@ Tristimulus renderers are usually based on the RGB color space, although they of
 	\label{fig:mitsubaRGBSpectralComparison}
 \end{figure}
 
-However, light in real world does not travel as a tristimulus value, but rather as a distribution of wavelengths. Therefore, RGB renderers cannot properly simulate the physical properties of color during e.g. reflections or refractions when ray tracing.
+However, light in real world does not travel as a tristimulus value, but rather as a distribution of wavelengths. Therefore, RGB renderers cannot properly simulate the physical properties of color during reflections or refractions.
 
 Spectral rendering, on the other hand, uses full-spectral information of all materials and lights in the scene throughout the whole rendering process. Obviously, before visualization occurs, spectral information must be converted into tristimulus (usually RGB) values, but this does not pose a problem as, at the moment of conversion, all the physically based simulations have already taken place. Therefore, the rendered scene appears more realistic. We demonstrate this difference in~\cref{fig:mitsubaRGBSpectralComparison}, on a scene already rendered by Mitsuba2~\cite{Mitsuba2}. As can be observed, while the scene rendered in the RGB mode produces an unnaturally saturated image, the spectrally-based render results in more realistic colors.
 
-In addition to a more convincing rendering of reflections and refractions, another reason for using spectral rendering is its capability to simulate physically based phenomena that arise due to the interaction of color with light. Following, we overview some of the most common ones:
+In addition to a more convincing rendering of reflections and refractions, another reason for using spectral rendering is its capability to simulate physically based phenomena that arise due to the interaction of light with specific materials. Following, we overview some of the most common ones:
 \begin{itemize}
 \item \emph{Metamerism} \label{item:metamerism}
 
-As already mentioned in~\cref{ssec:tristimulusRepres}, the human tristimulus perception has a significantly lower domain than the (practically infinite) spectral domain. Therefore, two different spectra can trigger the same cone response in the human eye and appear to have the same color (and, subsequently, to have the same RGB values), giving rise to a phenomenon called \emph{metamerism}. The two spectra evaluating to the same tristimulus values are called \emph{metamers}.
+As already mentioned in~\cref{ssec:tristimulusRepres}, the human tristimulus perception has a significantly lower domain than the spectral domain. Therefore, two different spectra can trigger the same cone response in the human eye and appear to have the same color (and, subsequently, to have the same RGB values), giving rise to a phenomenon called \emph{metamerism}. The two spectra evaluating to the same tristimulus values are called \emph{metamers}.
 
 In real world, metamerism is often perceived when the lighting conditions under which we observe metamers change. An example of this can be seen in~\cref{fig:metamerism}, where the color of the presented spheres is similar under the D65 illuminant, but clearly differs under the fluorescent F11 illuminant.
 
@@ -267,15 +269,15 @@ As an RGB renderer does not possess spectral information, it cannot replicate th
 
 \item \emph{Fluorescence}
 
-By definition, fluorescence occurs when light from one excitation wavelength $\lambda_0$ is absorbed by an object and is almost immediately re-emitted at a different, usually longer, wavelength $\lambda_1$~\cite{fluorescenceDefinition}. Specifically interesting is the fact that the absorbed light can come from outside of the visible spectrum and be re-emitted inside it, which results in an unrealistically bright appearance of materials. This can be perceived in real world when, for example, fish, corals, jellyfish or even minerals are illuminated by a UV light.
+By definition, fluorescence occurs when light from one excitation wavelength $\lambda_0$ is absorbed by an object and is almost immediately re-emitted at a different, usually longer, wavelength $\lambda_1$~\cite{fluorescenceDefinition}. Specifically interesting is the fact that the absorbed light can come from outside of the visible spectrum and be re-emitted inside it, which results in an unrealistically bright appearance of materials. This can be perceived in real world when, for example, fluorescent fish, corals, jellyfish or even minerals are illuminated by a UV light.
 
-RGB renderers attempt to fake this kind of behavior through custom shaders~\cite{fluorescencePolarization}. As they often produce satisfactory results and, in comparison to physical simulation, are immensely easier to implement, physically based fluorescence has received small amount of work. Its support can be found in spectral renderers, added for example to ART by~\citet{fluorescenceART}.
+RGB renderers attempt to fake this behavior through custom shaders~\cite{fluorescencePolarization}. As they often produce satisfactory results and, in comparison to physical simulation, are immensely easier to implement, physically based fluorescence has received small amount of work. Its support can be found in spectral renderers, added for example to ART by~\citet{fluorescenceART}.
 
 \item \emph{Iridescence}
 
 \emph{Iridescence}, or goniochromism, is a phenomenon occurring when certain surfaces change color according to the current viewing angle. It arises when the object's physical structure causes interferences between light waves (e.g. inside extremely thin dielectric layers), yielding rich color variations~\cite{iridescenceArticle1}. It can be perceived in nature in certain plants, specific minerals, butterfly wings, peacock's feathers, snakes, but also in man-made products such as oil leaks, soap bubbles or car paints.
 
-Similarly to fluorescence, iridescent behavior can be ``faked'' in an RGB renderer~\cite{iridescenceRGB}. However, research based on physical properties of iridescence has also been conducted. For further information about the current development, we refer the interested reader to the articles by~\citet{iridescenceArticle1},~\citet{iridescenceArticle2}, or~\citet{iridescenceArticle3}.
+Similarly to fluorescence, iridescent behavior can be faked in an RGB renderer~\cite{iridescenceRGB}. However, research based on physical properties of iridescence has also been conducted. For further information about the current development, we refer the interested reader to the articles by~\citet{iridescenceArticle1},~\citet{iridescenceArticle2}, or~\citet{iridescenceArticle3}.
 
 \item \emph{Dispersion}
 
@@ -287,7 +289,7 @@ There have been multiple attempts to simulate physically based dispersion. We re
 
 \item \emph{Polarization}
 
-Electromagnetic waves traveling through space are \emph{transverse waves} --- their oscillation is perpendicular to their path of propagation. By default, the directions of oscillations are arbitrary for each photon --- this type of light is called an \emph{unpolarized light}. Restrictions to the directions of oscillations (also called \emph{polarization}) render \emph{polarized light}. Such phenomenon usually occurs upon light's interaction with certain materials.
+Electromagnetic waves traveling through space are \emph{transverse waves} --- their oscillation is perpendicular to their path of propagation. By default, the directions of oscillations are arbitrary for each photon --- this type of light is called an \emph{unpolarized light}. Restrictions to the directions of oscillations (also called \emph{polarization}) render \emph{polarized light}. Such phenomenon usually occurs upon light's interaction with certain materials, called polarizers.
 
 The polarization process contributes to the overall color only in special cases (e.g. when using polarization filters)~\cite{fluorescencePolarization}. Therefore, it receives little attention in implementation of rendering softwares. However, for physical consistencies (and due to the possibility of unusual scenes) both ART~\cite{ART} and Mitsuba~\cite{Mitsuba2} follow the direction of oscillation during the rendering process.
 \end{itemize}
