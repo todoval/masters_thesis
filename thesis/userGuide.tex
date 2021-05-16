@@ -1,1 +1,137 @@
 \chapter{Software user guide}
+
+In this appendix, we provide a user guide for compiling and running both Borgtool (for the purposes of creating the cube) and ART (for the purposes of its utilization).
+
+Both softwares have been tested on Ubuntu~20.04 with CMake~3.16.3 and g++~8.4.0. As we do not provide any binaries, the user must compile the projects first.
+
+\section{Borgtool}
+
+To build Borgtool, execute the following steps:
+\begin{enumerate}
+	\item Unzip the provided attachment and open the $Borgtool$ folder 
+	\item Make sure you have installed ART and Ceres (see CMakeLists.txt for more details about necessary dependencies)
+	\item Build the project using CMake
+\end{enumerate}
+
+It is possible to run the program with several options. Following, we provide the list of the ones supported with the trigonometric moment-based method:
+
+\begin{verbatim}
+Usage: borgtool [-options]
+where the options include:
+    (-cc | --createCube) <filename>
+        fit new RGB coefficient cube
+    -mo | --momentOpt 
+        use moments for spectral representation
+    (-cd | --cubeDimension) <numpoints>
+        # of cube lattice points in one dimension
+    (-ft | --fittingThreshold) <x>
+        threshold in fraction 1/x of voxel size
+    -pi | --progressImages
+        generate fitting progress images
+    -ofr | --onlyFirstRound
+        do not attempt to improve the cube
+    (-tex | --texture) <filename>
+        create EXR test texture for cube testing
+    (-ctx | --cubeTexture) <filename>
+        create EXR test texture with cube data
+    (-tv | --textureV) <0..1>
+        HSV V value for the two preceding textures
+    (-sfd | --showFittingDelta) <0..1>
+        show delta between lattice and target RGB
+    (-uc | --useCorner) <index>
+        use coefficents from voxel corner #
+    (-ply | --generatePLY) <filename>
+        create PLY geometry for UCC file
+    -srgb | --sRGB 
+        use sRGB (default)
+    (-a | --atlas) <atlasID>
+        seed the cube with atlas with ID #
+\end{verbatim}
+
+Examples of usage: 
+\begin{itemize}
+	\item \texttt{borgtool -mo -cc cube\_mcob -cd 64 -a 0}
+	
+	This command creates a new trigonometric moment-based RGB cube of size $64^3$ seeded with an atlas with $ID=0$, which is the Munsell Book of Color.
+	
+	\item \texttt{borgtool -mo -cc cube\_middle}
+	
+	This command creates a new trigonometric moment-based RGB cube of size $32^3$. As no atlas is specified, the cube grows from its center.
+	
+	\item \texttt{borgtool -mo -rc cube\_mcc -ctx test\_texture -tv 0.5}
+	
+	This command loads a cube with the name \texttt{cube\_mcc} and utilizes it for uplifting a rainbow texture (see~\cref{fig:uplift_colourful_texture}). The brightness of the texture is set to $0.5$, and the resulting uplift is stored in a file named \texttt{test\_texture}.
+
+\end{itemize}
+
+\section{ART}
+To build ART, execute the following steps:
+\begin{enumerate}
+	\item Unzip the provided attachment and open the $ART$ folder 
+	\item Build the project using the instructions from the ART website at\newline \url{https://cgg.mff.cuni.cz/ART/download/}
+\end{enumerate} 
+
+In order to utilize the cubes created by Borgtool, execute the following steps:
+\begin{enumerate}
+	\item Copy the cubes you wish to utilize to \texttt{ART/ART\_Resources/SpectralUplift}
+	\item Add the following code snippet:
+	\begin{verbatim}
+        SET_UPLIFT_CUBE(
+            "my_cube_name.ucc"
+        ),
+	\end{verbatim}
+	to the action sequence of the \texttt{.arm} file whose image map you wish to uplift. If this option is omitted, the sigmoid cube is utilized.
+	\item run the \texttt{artist} command with the desired parameters
+\end{enumerate}
+
+\subsection{Example scenes}
+
+In the \texttt{Resources} folder found in the attachment of this thesis, we provide multiple example scenes along with textures and cubes, some of which have been used to render images in this thesis. Following, we provide instructions on how to replicate these renders, and overview the contents of the attached folder.
+
+Before running the example scenes, do the following:
+\begin{enumerate}
+	\item Copy all the \texttt{.ucc} files from the provided \texttt{Resources/cubes} folder to\newline \texttt{ART/ART\_Resources/SpectralUplift}
+	
+	\item Copy all the \texttt{.tif} and \texttt{.tiff} files from the provided \texttt{Resources/textures} folder to \texttt{ART/ART\_Resources} 
+\end{enumerate}
+
+Contents of the \texttt{Resources} folder include:
+\begin{itemize}
+	
+	\item Resources for replicating~\cref{fig:results_art_scene}:
+	\begin{itemize}
+		\item \texttt{scenes/Three\_Pages\_Original.arm} file for replicating the original spectral render. Rendering it does not require any additional resources.
+		\item \texttt{scenes/Three\_Pages\_Texture.arm} file for replicating the constrained and the sigmoid-based uplift. 
+		Additional resources required are as follows:
+		\begin{itemize}
+			\item uplift cube: \texttt{cubes/three\_pages.ucc}
+			\item image maps:
+			\begin{itemize}
+				\item[] \texttt{cubes/three\_pages\_page10.tiff}
+				\item[] \texttt{cubes/three\_pages\_page12.tiff}
+				\item[] \texttt{cubes/three\_pages\_page14.tiff}
+			\end{itemize}
+		\end{itemize}
+	\end{itemize}
+
+	\item Resources for replicating~\cref{fig:colorimetric_properties}:
+	\begin{itemize}
+		\item scene file: \texttt{Gradient\_Texture.arm}
+		\item image map: \texttt{textures/gradient.tif}
+		\item cubes: 
+		\begin{itemize}
+			\item[] \texttt{cubes/mboc\_cd32.ucc}
+			\item[] \texttt{cubes/none\_cd32.ucc}
+			\item[] \texttt{cubes/pantone\_cd32.ucc}
+		\end{itemize}
+	\end{itemize}
+	By default, the cube specified for uplifting in the \texttt{Gradient\_Texture.arm} scene is \texttt{pantone\_cd32}. In order to render with a different cube, change the uplift cube in the scene description.
+	
+	\item Three additional scenes uplifting three pages of the Munsell Book of Color:
+	\begin{itemize}
+		\item \texttt{scenes/Page10\_Texture.arm}
+		\item \texttt{scenes/Page12\_Texture.arm}
+		\item \texttt{scenes/Page14\_Texture.arm}
+	\end{itemize}
+	For each of the scenes, a corresponding image map and an uplift cube can be found in \texttt{Resources/textures} and \texttt{Resources/cubes} respectively.
+\end{itemize}
